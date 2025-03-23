@@ -29,7 +29,8 @@ export interface Supplier {
   email: string;
   phone: string;
   address: string;
-  contactPerson: string;
+  contactName: string;
+  status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
 }
@@ -57,11 +58,10 @@ export interface TransactionItem {
 
 export interface Alert {
   id: string;
-  type: 'low-stock' | 'expiry';
-  medicationId: string;
-  medicationName: string;
+  type: 'lowStock' | 'expiringSoon' | 'system';
+  title: string;
+  relatedId: string;
   message: string;
-  severity: 'high' | 'medium' | 'low';
   isRead: boolean;
   createdAt: string;
 }
@@ -73,4 +73,18 @@ export interface DashboardStats {
   totalSalesToday: number;
   recentTransactions: Transaction[];
   topSelling: { name: string; count: number }[];
+}
+
+export interface StockChangeRecord {
+  id: string;
+  medicationId: string;
+  medicationName: string;
+  previousStock: number;
+  newStock: number;
+  changeAmount: number;
+  changeType: 'increase' | 'decrease';
+  reason: string;
+  userId: string;
+  userName: string;
+  timestamp: string;
 }

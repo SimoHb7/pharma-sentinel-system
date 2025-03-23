@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -30,6 +29,14 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { 
   Settings as SettingsIcon, 
   User, 
   Bell, 
@@ -38,14 +45,30 @@ import {
   CreditCard, 
   Printer,
   Save, 
-  AlertTriangle
+  AlertTriangle,
+  UserPlus,
+  Edit,
+  Trash,
+  Lock
 } from "lucide-react";
+import { User as UserType } from "@/types";
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, hasPermission, allUsers, addUser, updateUser, deleteUser } = useAuth();
   const { toast } = useToast();
   
-  // General settings
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+  const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    role: "staff" as const,
+    password: "password123"
+  });
+  
   const [pharmacyName, setPharmacyName] = useState("PharmSentinel");
   const [pharmacyAddress, setPharmacyAddress] = useState("123 Pharmacy Street, Medical City");
   const [pharmacyPhone, setPharmacyPhone] = useState("(555) 123-4567");
@@ -53,7 +76,6 @@ export default function Settings() {
   const [timezone, setTimezone] = useState("UTC-5");
   const [dateFormat, setDateFormat] = useState("MM/DD/YYYY");
   
-  // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
   const [stockAlerts, setStockAlerts] = useState(true);
@@ -61,29 +83,19 @@ export default function Settings() {
   const [expiryAlerts, setExpiryAlerts] = useState(true);
   const [expiryDays, setExpiryDays] = useState("30");
   
-  // Receipt settings
   const [showLogo, setShowLogo] = useState(true);
   const [showTaxId, setShowTaxId] = useState(true);
   const [taxId, setTaxId] = useState("12-3456789");
   const [receiptFooter, setReceiptFooter] = useState("Thank you for your purchase!");
   const [receiptCopies, setReceiptCopies] = useState("1");
   
-  // User settings
   const [userName, setUserName] = useState(user?.name || "");
   const [userEmail, setUserEmail] = useState(user?.email || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  // User role management (mock data in a real app, this would be fetched from backend)
-  const [users, setUsers] = useState([
-    { id: "u1", name: "Admin User", email: "admin@example.com", role: "admin" },
-    { id: "u2", name: "Pharmacist One", email: "pharmacist1@example.com", role: "pharmacist" },
-    { id: "u3", name: "Staff Member", email: "staff@example.com", role: "staff" }
-  ]);
-  
   const handleSaveSettings = (type: string) => {
-    // In a real app, this would save to backend
     toast({
       title: "Settings Saved",
       description: `Your ${type} settings have been updated successfully.`
@@ -109,7 +121,6 @@ export default function Settings() {
       return;
     }
     
-    // In a real app, this would verify and update the password
     toast({
       title: "Password Updated",
       description: "Your password has been updated successfully."
@@ -120,15 +131,53 @@ export default function Settings() {
     setConfirmPassword("");
   };
   
-  const handleUpdateRole = (userId: string, newRole: string) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, role: newRole } : user
-    ));
+  const handleAddUser = () => {
+    if (!newUser.name || !newUser.email) {
+      toast({
+        title: "Error",
+        description: "Name and email are required.",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    toast({
-      title: "Role Updated",
-      description: `User role has been updated to ${newRole}.`
+    addUser(newUser);
+    
+    setNewUser({
+      name: "",
+      email: "",
+      role: "staff",
+      password: "password123"
     });
+    setIsAddUserDialogOpen(false);
+  };
+  
+  const handleEditUser = () => {
+    if (!currentUser) return;
+    
+    updateUser(currentUser.id, {
+      name: currentUser.name,
+      email: currentUser.email,
+      role: currentUser.role
+    });
+    
+    setIsEditUserDialogOpen(false);
+  };
+  
+  const handleDeleteUser = () => {
+    if (!currentUser) return;
+    
+    deleteUser(currentUser.id);
+    setIsDeleteUserDialogOpen(false);
+  };
+  
+  const getRoleDisplayName = (role: UserType['role']) => {
+    const roles = {
+      admin: "Administrator",
+      pharmacist: "Pharmacist",
+      staff: "Staff Member"
+    };
+    return roles[role];
   };
   
   return (
@@ -158,7 +207,11 @@ export default function Settings() {
             <User className="h-4 w-4 mr-2" />
             <span className="sm:inline hidden">Account</span>
           </TabsTrigger>
-          <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger 
+            value="users" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            disabled={!hasPermission('manage-users')}
+          >
             <Shield className="h-4 w-4 mr-2" />
             <span className="sm:inline hidden">Users</span>
           </TabsTrigger>
@@ -238,7 +291,10 @@ export default function Settings() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={() => handleSaveSettings("general")}>
+              <Button 
+                onClick={() => handleSaveSettings("general")}
+                disabled={!hasPermission('manage-settings')}
+              >
                 <Save className="h-4 w-4 mr-2" />
                 Save General Settings
               </Button>
@@ -357,7 +413,10 @@ export default function Settings() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={() => handleSaveSettings("notification")}>
+              <Button 
+                onClick={() => handleSaveSettings("notification")}
+                disabled={!hasPermission('manage-settings')}
+              >
                 <Save className="h-4 w-4 mr-2" />
                 Save Notification Settings
               </Button>
@@ -441,7 +500,10 @@ export default function Settings() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={() => handleSaveSettings("receipt")}>
+              <Button 
+                onClick={() => handleSaveSettings("receipt")}
+                disabled={!hasPermission('manage-settings')}
+              >
                 <Save className="h-4 w-4 mr-2" />
                 Save Receipt Settings
               </Button>
@@ -527,7 +589,7 @@ export default function Settings() {
                 onClick={handleUpdatePassword}
                 disabled={!currentPassword || !newPassword || !confirmPassword}
               >
-                <Shield className="h-4 w-4 mr-2" />
+                <Lock className="h-4 w-4 mr-2" />
                 Update Password
               </Button>
             </CardFooter>
@@ -536,11 +598,17 @@ export default function Settings() {
         
         <TabsContent value="users" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Manage user accounts and permissions
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>
+                  Manage user accounts and permissions
+                </CardDescription>
+              </div>
+              <Button onClick={() => setIsAddUserDialogOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="border rounded-md">
@@ -551,66 +619,215 @@ export default function Settings() {
                   <div className="text-right">Actions</div>
                 </div>
                 
-                {users.map((user) => (
+                {allUsers.map((usr) => (
                   <div 
-                    key={user.id} 
+                    key={usr.id} 
                     className="grid grid-cols-4 p-3 items-center border-t first:border-t-0"
                   >
-                    <div className="font-medium">{user.name}</div>
-                    <div className="text-sm">{user.email}</div>
+                    <div className="font-medium">{usr.name}</div>
+                    <div className="text-sm">{usr.email}</div>
                     <div>
-                      <Select
-                        value={user.role}
-                        onValueChange={(value) => handleUpdateRole(user.id, value)}
-                        disabled={user.id === "u1"} // Don't allow changing the admin role
-                      >
-                        <SelectTrigger className="h-8 w-40">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="pharmacist">Pharmacist</SelectItem>
-                          <SelectItem value="staff">Staff</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Badge variant={
+                        usr.role === 'admin' ? 'default' : 
+                        usr.role === 'pharmacist' ? 'secondary' : 'outline'
+                      }>
+                        {getRoleDisplayName(usr.role)}
+                      </Badge>
                     </div>
                     <div className="flex justify-end">
-                      <Button variant="ghost" size="sm" title="This feature is not available in the demo">
-                        <Mail className="h-4 w-4" />
-                        <span className="sr-only">Email</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setCurrentUser(usr);
+                          setIsEditUserDialogOpen(true);
+                        }}
+                        disabled={user?.id === usr.id}
+                        title={user?.id === usr.id ? "Cannot edit your own account from here" : "Edit user"}
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className="text-destructive"
-                        disabled={user.id === "u1"} // Don't allow removing the admin
-                        title={user.id === "u1" ? "Cannot remove admin user" : "This feature is not available in the demo"}
+                        onClick={() => {
+                          setCurrentUser(usr);
+                          setIsDeleteUserDialogOpen(true);
+                        }}
+                        disabled={user?.id === usr.id}
+                        title={user?.id === usr.id ? "Cannot delete your own account" : "Delete user"}
                       >
-                        <AlertTriangle className="h-4 w-4" />
-                        <span className="sr-only">Remove</span>
+                        <Trash className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
                       </Button>
                     </div>
                   </div>
                 ))}
               </div>
-              
-              <div className="rounded-md bg-muted p-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="flex-1">
-                    <h3 className="font-medium">Invite New User</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Send an invitation to a new team member
-                    </p>
-                  </div>
-                  <Button variant="default" title="This feature is not available in the demo">
-                    Add User
-                  </Button>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      
+      <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account with appropriate access level
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-user-name">Full Name</Label>
+              <Input
+                id="new-user-name"
+                placeholder="John Doe"
+                value={newUser.name}
+                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-user-email">Email Address</Label>
+              <Input
+                id="new-user-email"
+                type="email"
+                placeholder="john@example.com"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-user-role">Role</Label>
+              <Select 
+                value={newUser.role} 
+                onValueChange={(value: "admin" | "pharmacist" | "staff") => 
+                  setNewUser({ ...newUser, role: value })
+                }
+              >
+                <SelectTrigger id="new-user-role">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="pharmacist">Pharmacist</SelectItem>
+                  <SelectItem value="staff">Staff Member</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-user-password">Temporary Password</Label>
+              <Input
+                id="new-user-password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                The user will be required to change this on first login
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddUser}>
+              Add User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {currentUser && (
+        <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update user information and access level
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-user-name">Full Name</Label>
+                <Input
+                  id="edit-user-name"
+                  value={currentUser.name}
+                  onChange={(e) => setCurrentUser({ ...currentUser, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-user-email">Email Address</Label>
+                <Input
+                  id="edit-user-email"
+                  type="email"
+                  value={currentUser.email}
+                  onChange={(e) => setCurrentUser({ ...currentUser, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-user-role">Role</Label>
+                <Select 
+                  value={currentUser.role} 
+                  onValueChange={(value: "admin" | "pharmacist" | "staff") => 
+                    setCurrentUser({ ...currentUser, role: value })
+                  }
+                >
+                  <SelectTrigger id="edit-user-role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                    <SelectItem value="pharmacist">Pharmacist</SelectItem>
+                    <SelectItem value="staff">Staff Member</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditUserDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditUser}>
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {currentUser && (
+        <Dialog open={isDeleteUserDialogOpen} onOpenChange={setIsDeleteUserDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Delete User</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this user? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 flex items-center gap-4 border rounded-md p-4">
+              <AlertTriangle className="h-10 w-10 text-amber-500" />
+              <div>
+                <p className="font-medium">{currentUser.name}</p>
+                <p className="text-sm text-muted-foreground">{currentUser.email}</p>
+                <p className="text-sm text-muted-foreground">Role: {getRoleDisplayName(currentUser.role)}</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteUserDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteUser}>
+                Delete User
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
+
+function

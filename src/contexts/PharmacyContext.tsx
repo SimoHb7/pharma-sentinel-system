@@ -10,7 +10,7 @@ import {
   TransactionItem
 } from "@/types";
 import { generateId } from "@/lib/utils";
-import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
 
 interface PharmacyContextType {
   // Data
@@ -24,6 +24,7 @@ interface PharmacyContextType {
   addMedication: (medication: Omit<Medication, "id" | "createdAt" | "updatedAt">) => void;
   updateMedication: (id: string, updates: Partial<Medication>) => void;
   deleteMedication: (id: string) => void;
+  updateStock: (id: string, newStock: number, reason?: string) => void;
   
   // Supplier functions
   addSupplier: (supplier: Omit<Supplier, "id" | "createdAt" | "updatedAt">) => void;
@@ -47,6 +48,12 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
   const [alertsState, setAlerts] = useState<Alert[]>(alerts);
   const [statsState, setDashboardStats] = useState<DashboardStats>(dashboardStats);
 
+  // Stock threshold for low stock alerts
+  const LOW_STOCK_THRESHOLD = 10;
+
+  // Check if medication is low on stock
+  const isLowStock = (stock: number) => stock <= LOW_STOCK_THRESHOLD;
+
   // Medication functions
   const addMedication = (medication: Omit<Medication, "id" | "createdAt" | "updatedAt">) => {
     const now = new Date().toISOString();
@@ -62,24 +69,130 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       totalMedications: prev.totalMedications + 1
     }));
+    
+    // Create alert if new medication is low on stock
+    if (isLowStock(newMedication.stock)) {
+      createLowStockAlert(newMedication);
+    }
+    
+    toast({
+      title: "Medication Added",
+      description: `${newMedication.name} has been added to inventory.`
+    });
   };
 
   const updateMedication = (id: string, updates: Partial<Medication>) => {
-    setMedications(prev => 
-      prev.map(med => 
-        med.id === id 
-          ? { ...med, ...updates, updatedAt: new Date().toISOString() } 
-          : med
-      )
+    let updatedMedication: Medication | undefined;
+    
+    setMedications(prev => {
+      const updated = prev.map(med => {
+        if (med.id === id) {
+          updatedMedication = { 
+            ...med, 
+            ...updates, 
+            updatedAt: new Date().toISOString() 
+          };
+          return updatedMedication;
+        }
+        return med;
+      });
+      return updated;
+    });
+    
+    // If stock was updated, check if we need to create or remove low stock alerts
+    if (updatedMedication && 'stock' in updates) {
+      handleStockUpdate(updatedMedication);
+    }
+  };
+  
+  // Dedicated function to update stock with tracking
+  const updateStock = (id: string, newStock: number, reason?: string) => {
+    const medication = medsState.find(med => med.id === id);
+    if (!medication) return;
+    
+    const oldStock = medication.stock;
+    const stockChange = newStock - oldStock;
+    
+    updateMedication(id, { stock: newStock });
+    
+    // Log stock change
+    toast({
+      title: stockChange > 0 ? "Stock Increased" : "Stock Decreased",
+      description: `${medication.name}: ${Math.abs(stockChange)} units ${stockChange > 0 ? 'added to' : 'removed from'} inventory. ${reason ? `Reason: ${reason}` : ''}`
+    });
+    
+    // Update low stock count in dashboard if needed
+    const wasLowStock = isLowStock(oldStock);
+    const isNowLowStock = isLowStock(newStock);
+    
+    if (!wasLowStock && isNowLowStock) {
+      setDashboardStats(prev => ({
+        ...prev,
+        lowStockCount: prev.lowStockCount + 1
+      }));
+    } else if (wasLowStock && !isNowLowStock) {
+      setDashboardStats(prev => ({
+        ...prev,
+        lowStockCount: Math.max(0, prev.lowStockCount - 1)
+      }));
+    }
+  };
+
+  const handleStockUpdate = (medication: Medication) => {
+    // Check if this medication already has a low stock alert
+    const existingAlertIndex = alertsState.findIndex(
+      alert => alert.type === "lowStock" && alert.relatedId === medication.id
     );
+    
+    // If stock is low and there's no alert, create one
+    if (isLowStock(medication.stock) && existingAlertIndex === -1) {
+      createLowStockAlert(medication);
+    } 
+    // If stock is now sufficient and there was an alert, remove it
+    else if (!isLowStock(medication.stock) && existingAlertIndex !== -1) {
+      // Create a copy of alerts and remove the low stock alert
+      const updatedAlerts = [...alertsState];
+      updatedAlerts.splice(existingAlertIndex, 1);
+      setAlerts(updatedAlerts);
+    }
+  };
+
+  const createLowStockAlert = (medication: Medication) => {
+    const newAlert: Alert = {
+      id: generateId("a"),
+      type: "lowStock",
+      title: "Low Stock Alert",
+      relatedId: medication.id,
+      message: `${medication.name} is running low on stock (${medication.stock} units remaining).`,
+      isRead: false,
+      createdAt: new Date().toISOString()
+    };
+    
+    setAlerts(prev => [newAlert, ...prev]);
   };
 
   const deleteMedication = (id: string) => {
+    const medication = medsState.find(med => med.id === id);
+    if (!medication) return;
+    
     setMedications(prev => prev.filter(med => med.id !== id));
+    
+    // Remove any alerts associated with this medication
+    setAlerts(prev => prev.filter(alert => alert.relatedId !== id));
+    
     setDashboardStats(prev => ({
       ...prev,
-      totalMedications: prev.totalMedications - 1
+      totalMedications: prev.totalMedications - 1,
+      // If it was low on stock, decrease low stock count
+      lowStockCount: isLowStock(medication.stock) 
+        ? Math.max(0, prev.lowStockCount - 1)
+        : prev.lowStockCount
     }));
+    
+    toast({
+      title: "Medication Deleted",
+      description: `${medication.name} has been removed from inventory.`
+    });
   };
 
   // Supplier functions
@@ -93,6 +206,11 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
     };
     
     setSuppliers(prev => [...prev, newSupplier]);
+    
+    toast({
+      title: "Supplier Added",
+      description: `${newSupplier.name} has been added to your suppliers.`
+    });
   };
 
   const updateSupplier = (id: string, updates: Partial<Supplier>) => {
@@ -103,10 +221,23 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
           : supplier
       )
     );
+    
+    toast({
+      title: "Supplier Updated",
+      description: "Supplier information has been updated successfully."
+    });
   };
 
   const deleteSupplier = (id: string) => {
+    const supplier = suppliersState.find(s => s.id === id);
+    if (!supplier) return;
+    
     setSuppliers(prev => prev.filter(supplier => supplier.id !== id));
+    
+    toast({
+      title: "Supplier Deleted",
+      description: `${supplier.name} has been removed from your suppliers.`
+    });
   };
 
   // Transaction functions
@@ -122,9 +253,26 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
     // Update inventory if it's a sale
     if (transaction.type === 'sale') {
       transaction.items.forEach((item: TransactionItem) => {
-        updateMedication(item.medicationId, {
-          stock: medsState.find(m => m.id === item.medicationId)!.stock - item.quantity
-        });
+        const medication = medsState.find(m => m.id === item.medicationId);
+        if (medication) {
+          updateStock(
+            item.medicationId, 
+            medication.stock - item.quantity,
+            `Sale: Transaction ${newTransaction.id}`
+          );
+        }
+      });
+    } else if (transaction.type === 'purchase') {
+      // For inventory purchases, increase stock
+      transaction.items.forEach((item: TransactionItem) => {
+        const medication = medsState.find(m => m.id === item.medicationId);
+        if (medication) {
+          updateStock(
+            item.medicationId, 
+            medication.stock + item.quantity,
+            `Purchase: Transaction ${newTransaction.id}`
+          );
+        }
       });
     }
     
@@ -141,6 +289,11 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
         }));
       }
     }
+    
+    toast({
+      title: "Transaction Added",
+      description: `${transaction.type === 'sale' ? 'Sale' : 'Purchase'} of ${transaction.items.length} items completed.`
+    });
   };
 
   // Alert functions
@@ -168,6 +321,7 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
       addMedication,
       updateMedication,
       deleteMedication,
+      updateStock,
       addSupplier,
       updateSupplier,
       deleteSupplier,

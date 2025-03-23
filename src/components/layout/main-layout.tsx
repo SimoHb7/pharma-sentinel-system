@@ -76,7 +76,8 @@ export default function MainLayout() {
       {/* Main content */}
       <div className={cn(
         "flex flex-col flex-1 overflow-hidden transition-all duration-300",
-        sidebarOpen && !isMobile && "ml-64",
+        sidebarOpen && !isMobile ? "ml-64" : "mx-auto", // Center content when sidebar is closed
+        "max-w-screen-2xl" // Add max width to keep content contained
       )}>
         <TopBar />
         <main className="flex-1 overflow-auto p-6">
