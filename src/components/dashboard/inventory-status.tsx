@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { usePharmacy } from "@/contexts/PharmacyContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Alert, ChevronRight, Package } from "lucide-react";
+import { ChevronRight, Package } from "lucide-react";
 import { isExpiringSoon, isLowStock } from "@/lib/utils";
 
 export function InventoryStatus() {

@@ -6,7 +6,7 @@ import { InventoryStatus } from "@/components/dashboard/inventory-status";
 import { SalesChart } from "@/components/dashboard/sales-chart";
 import { usePharmacy } from "@/contexts/PharmacyContext";
 import { formatCurrency } from "@/lib/utils";
-import { PieChart, Pills, AlertTriangle, CreditCard } from "lucide-react";
+import { PieChart, Pill, AlertTriangle, CreditCard } from "lucide-react";
 
 export default function Dashboard() {
   const { medications, alerts, dashboardStats } = usePharmacy();
@@ -34,7 +34,7 @@ export default function Dashboard() {
           title="Total Medications"
           value={medications.length}
           description="Total products in inventory"
-          icon={<Pills className="h-4 w-4" />}
+          icon={<Pill className="h-4 w-4" />}
         />
         <StatCard
           title="Low Stock Items"

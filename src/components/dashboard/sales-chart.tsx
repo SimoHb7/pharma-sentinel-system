@@ -47,7 +47,6 @@ export function SalesChart() {
                 dataKey="date" 
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 12 }}
                 tickMargin={10}
                 tick={props => {
                   // Only show every 5th tick to avoid crowding
@@ -72,7 +71,6 @@ export function SalesChart() {
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 12 }}
                 tickMargin={10}
                 tick={props => {
                   const { x, y, payload } = props;
