@@ -1,14 +1,13 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User, Role } from "@/types";
+import { User } from "@/types";
 import { users } from "@/lib/mock-data";
-import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  hasRole: (role: Role) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,7 +15,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     // Check for saved user in localStorage
@@ -42,20 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (foundUser) {
         setUser(foundUser);
         localStorage.setItem("pharmacy-user", JSON.stringify(foundUser));
-        
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${foundUser.name}!`,
-        });
-        
         return true;
       }
-      
-      toast({
-        title: "Login Failed",
-        description: "Invalid email or password.",
-        variant: "destructive",
-      });
       
       return false;
     } finally {
@@ -66,25 +52,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("pharmacy-user");
-    
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
-  };
-  
-  const hasRole = (role: Role): boolean => {
-    if (!user) return false;
-    
-    // Admin has access to everything
-    if (user.role === 'admin') return true;
-    
-    // Otherwise, check if the user's role matches the required role
-    return user.role === role;
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

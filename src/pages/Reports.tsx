@@ -22,8 +22,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { usePharmacy } from "@/contexts/PharmacyContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { format, subDays, subMonths, isWithinInterval, isSameDay } from "date-fns";
+import { format, subDays, subMonths, isWithinInterval } from "date-fns";
 import { 
   BarChart, 
   Bar, 
@@ -44,7 +43,6 @@ import { formatCurrency } from "@/lib/utils";
 
 export default function Reports() {
   const { transactions, medications, suppliers } = usePharmacy();
-  const { hasRole } = useAuth();
   const [dateRange, setDateRange] = useState("7days");
   const [activeTab, setActiveTab] = useState("sales");
   
@@ -73,93 +71,70 @@ export default function Reports() {
     return isWithinInterval(transactionDate, { start: startDate, end: new Date() });
   });
   
-  // Group sales by date for chart display
-  const salesByDate = filteredTransactions
+  // Sales data for charts
+  const salesData = filteredTransactions
     .filter(t => t.type === 'sale')
-    .reduce((acc: Record<string, { date: string; total: number; count: number }>, transaction) => {
+    .reduce((acc: any[], transaction) => {
       const date = format(new Date(transaction.createdAt), "MMM dd");
+      const existingDay = acc.find(item => item.date === date);
       
-      if (!acc[date]) {
-        acc[date] = { date, total: 0, count: 0 };
+      if (existingDay) {
+        existingDay.total += transaction.total;
+        existingDay.count += 1;
+      } else {
+        acc.push({
+          date,
+          total: transaction.total,
+          count: 1
+        });
       }
       
-      acc[date].total += transaction.total;
-      acc[date].count += 1;
-      
       return acc;
-    }, {});
-
-  // Convert to array and sort by date
-  const salesData = Object.values(salesByDate).sort((a, b) => {
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
-  });
-  
-  // Calculate sales for today, this week, and this month
-  const today = new Date();
-  const salesToday = transactions
-    .filter(t => t.type === 'sale' && isSameDay(new Date(t.createdAt), today))
-    .reduce((sum, t) => sum + t.total, 0);
-  
-  const salesThisWeek = transactions
-    .filter(t => {
-      const transactionDate = new Date(t.createdAt);
-      const weekStart = subDays(today, 7);
-      return t.type === 'sale' && isWithinInterval(transactionDate, { start: weekStart, end: today });
-    })
-    .reduce((sum, t) => sum + t.total, 0);
-  
-  const salesThisMonth = transactions
-    .filter(t => {
-      const transactionDate = new Date(t.createdAt);
-      const monthStart = subMonths(today, 1);
-      return t.type === 'sale' && isWithinInterval(transactionDate, { start: monthStart, end: today });
-    })
-    .reduce((sum, t) => sum + t.total, 0);
+    }, []);
   
   // Top selling medications
   const topSellingData = filteredTransactions
     .filter(t => t.type === 'sale')
     .flatMap(t => t.items)
-    .reduce((acc: Record<string, { name: string; quantity: number; revenue: number }>, item) => {
-      if (!acc[item.medicationId]) {
-        acc[item.medicationId] = {
+    .reduce((acc: any[], item) => {
+      const existingItem = acc.find(i => i.name === item.medicationName);
+      
+      if (existingItem) {
+        existingItem.quantity += item.quantity;
+        existingItem.revenue += item.subtotal;
+      } else {
+        acc.push({
           name: item.medicationName,
-          quantity: 0,
-          revenue: 0
-        };
+          quantity: item.quantity,
+          revenue: item.subtotal
+        });
       }
       
-      acc[item.medicationId].quantity += item.quantity;
-      acc[item.medicationId].revenue += item.subtotal;
-      
       return acc;
-    }, {});
-
-  const topSellingArray = Object.values(topSellingData)
+    }, [])
     .sort((a, b) => b.quantity - a.quantity)
     .slice(0, 5);
   
   // Payment methods data
   const paymentMethodData = filteredTransactions
     .filter(t => t.type === 'sale')
-    .reduce((acc: Record<string, { name: string; value: number; count: number }>, transaction) => {
+    .reduce((acc: any[], transaction) => {
       const method = transaction.paymentMethod;
+      const existingMethod = acc.find(i => i.name === method);
       
-      if (!acc[method]) {
-        acc[method] = {
+      if (existingMethod) {
+        existingMethod.value += transaction.total;
+        existingMethod.count += 1;
+      } else {
+        acc.push({
           name: method,
-          value: 0,
-          count: 0
-        };
+          value: transaction.total,
+          count: 1
+        });
       }
       
-      acc[method].value += transaction.total;
-      acc[method].count += 1;
-      
       return acc;
-    }, {});
-
-  const paymentMethodArray = Object.values(paymentMethodData);
+    }, []);
   
   // Inventory status
   const inventoryData = {
@@ -177,22 +152,22 @@ export default function Reports() {
   };
   
   // Category breakdown
-  const categoryData = medications.reduce((acc: Record<string, { name: string; count: number; value: number }>, med) => {
-    if (!acc[med.category]) {
-      acc[med.category] = {
+  const categoryData = medications.reduce((acc: any[], med) => {
+    const existingCategory = acc.find(c => c.name === med.category);
+    
+    if (existingCategory) {
+      existingCategory.count += 1;
+      existingCategory.value += med.stock;
+    } else {
+      acc.push({
         name: med.category,
-        count: 0,
-        value: 0
-      };
+        count: 1,
+        value: med.stock
+      });
     }
     
-    acc[med.category].count += 1;
-    acc[med.category].value += med.stock;
-    
     return acc;
-  }, {});
-
-  const categoryArray = Object.values(categoryData);
+  }, []);
   
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#5DADE2'];
@@ -255,35 +230,29 @@ export default function Reports() {
               </CardDescription>
             </CardHeader>
             <CardContent className="h-[350px]">
-              {salesData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={salesData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis 
-                      tickFormatter={(value) => `$${value}`}
-                      domain={[0, 'dataMax + 100']}
-                    />
-                    <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      name="Revenue"
-                      stroke="#0088FE"
-                      activeDot={{ r: 8 }}
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">No sales data available for this period</p>
-                </div>
-              )}
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={salesData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis 
+                    tickFormatter={(value) => `$${value}`}
+                    domain={[0, 'dataMax + 100']}
+                  />
+                  <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Revenue"
+                    stroke="#0088FE"
+                    activeDot={{ r: 8 }}
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
           
@@ -295,10 +264,10 @@ export default function Reports() {
               </CardDescription>
             </CardHeader>
             <CardContent className="h-[350px]">
-              {topSellingArray.length > 0 ? (
+              {topSellingData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={topSellingArray}
+                    data={topSellingData}
                     layout="vertical"
                     margin={{ top: 20, right: 30, left: 60, bottom: 20 }}
                   >
@@ -322,7 +291,7 @@ export default function Reports() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">No sales data available for this period</p>
+                  <p className="text-muted-foreground">No sales data available</p>
                 </div>
               )}
             </CardContent>
@@ -336,11 +305,11 @@ export default function Reports() {
               </CardDescription>
             </CardHeader>
             <CardContent className="h-[350px]">
-              {paymentMethodArray.length > 0 ? (
+              {paymentMethodData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <Pie
-                      data={paymentMethodArray}
+                      data={paymentMethodData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -350,7 +319,7 @@ export default function Reports() {
                       nameKey="name"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {paymentMethodArray.map((entry, index) => (
+                      {paymentMethodData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -362,7 +331,7 @@ export default function Reports() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">No payment data available for this period</p>
+                  <p className="text-muted-foreground">No payment data available</p>
                 </div>
               )}
             </CardContent>
@@ -526,22 +495,22 @@ export default function Reports() {
             <CardContent className="h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={Object.values(
-                    medications.reduce((acc: Record<string, { name: string; cost: number; retail: number }>, med) => {
-                      if (!acc[med.category]) {
-                        acc[med.category] = {
-                          name: med.category,
-                          cost: 0,
-                          retail: 0
-                        };
-                      }
-                      
-                      acc[med.category].cost += med.stock * med.costPrice;
-                      acc[med.category].retail += med.stock * med.price;
-                      
-                      return acc;
-                    }, {})
-                  )}
+                  data={medications.reduce((acc: any[], med) => {
+                    const existingCategory = acc.find(c => c.name === med.category);
+                    
+                    if (existingCategory) {
+                      existingCategory.cost += med.stock * med.costPrice;
+                      existingCategory.retail += med.stock * med.price;
+                    } else {
+                      acc.push({
+                        name: med.category,
+                        cost: med.stock * med.costPrice,
+                        retail: med.stock * med.price
+                      });
+                    }
+                    
+                    return acc;
+                  }, [])}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -568,11 +537,11 @@ export default function Reports() {
               </CardDescription>
             </CardHeader>
             <CardContent className="h-[350px]">
-              {categoryArray.length > 0 ? (
+              {categoryData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <Pie
-                      data={categoryArray}
+                      data={categoryData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -582,7 +551,7 @@ export default function Reports() {
                       nameKey="name"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {categoryArray.map((entry, index) => (
+                      {categoryData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -608,7 +577,7 @@ export default function Reports() {
             <CardContent className="h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={categoryArray}
+                  data={categoryData}
                   margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -622,7 +591,7 @@ export default function Reports() {
                     fill="#8884d8" 
                     radius={[4, 4, 0, 0]}
                   >
-                    {categoryArray.map((entry, index) => (
+                    {categoryData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Bar>
@@ -641,40 +610,40 @@ export default function Reports() {
             <CardContent className="h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={Object.values(
-                    medications.reduce((acc: Record<string, { name: string; sales: number; revenue: number }>, med) => {
-                      // Get all sales for this medication
-                      const sales = filteredTransactions
-                        .filter(t => t.type === 'sale')
-                        .flatMap(t => t.items)
-                        .filter(item => item.medicationId === med.id)
-                        .reduce((sum, item) => sum + item.quantity, 0);
-                      
-                      const revenue = filteredTransactions
-                        .filter(t => t.type === 'sale')
-                        .flatMap(t => t.items)
-                        .filter(item => item.medicationId === med.id)
-                        .reduce((sum, item) => sum + item.subtotal, 0);
-                      
-                      if (!acc[med.category]) {
-                        acc[med.category] = {
-                          name: med.category,
-                          sales: 0,
-                          revenue: 0
-                        };
-                      }
-                      
-                      acc[med.category].sales += sales;
-                      acc[med.category].revenue += revenue;
-                      
-                      return acc;
-                    }, {})
-                  )}
+                  data={medications.reduce((acc: any[], med) => {
+                    // Get all sales for this medication
+                    const sales = filteredTransactions
+                      .filter(t => t.type === 'sale')
+                      .flatMap(t => t.items)
+                      .filter(item => item.medicationId === med.id)
+                      .reduce((sum, item) => sum + item.quantity, 0);
+                    
+                    const revenue = filteredTransactions
+                      .filter(t => t.type === 'sale')
+                      .flatMap(t => t.items)
+                      .filter(item => item.medicationId === med.id)
+                      .reduce((sum, item) => sum + item.subtotal, 0);
+                    
+                    const existingCategory = acc.find(c => c.name === med.category);
+                    
+                    if (existingCategory) {
+                      existingCategory.sales += sales;
+                      existingCategory.revenue += revenue;
+                    } else {
+                      acc.push({
+                        name: med.category,
+                        sales: sales,
+                        revenue: revenue
+                      });
+                    }
+                    
+                    return acc;
+                  }, [])}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
-                  <YAxis yAxisId="left" orientation="left" />
+                  <YAxis yAxisId="left" orientation="left" tickFormatter={(value) => `${value}`} />
                   <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `$${value}`} />
                   <Tooltip />
                   <Legend />

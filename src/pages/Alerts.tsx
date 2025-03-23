@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -34,14 +35,14 @@ export default function Alerts() {
   const filteredAlerts = alerts.filter(alert => {
     // First apply search filter
     const matchesSearch = 
-      alert.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      alert.medicationName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       alert.message.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Then apply category filter
     if (filter === "all") return matchesSearch;
     if (filter === "unread") return matchesSearch && !alert.isRead;
-    if (filter === "low-stock") return matchesSearch && alert.type === "lowStock";
-    if (filter === "expiry") return matchesSearch && alert.type === "expiringSoon";
+    if (filter === "low-stock") return matchesSearch && alert.type === "low-stock";
+    if (filter === "expiry") return matchesSearch && alert.type === "expiry";
     
     return matchesSearch;
   }).sort((a, b) => {
@@ -51,8 +52,8 @@ export default function Alerts() {
   });
   
   const unreadCount = alerts.filter(alert => !alert.isRead).length;
-  const lowStockCount = alerts.filter(alert => alert.type === "lowStock").length;
-  const expiryCount = alerts.filter(alert => alert.type === "expiringSoon").length;
+  const lowStockCount = alerts.filter(alert => alert.type === "low-stock").length;
+  const expiryCount = alerts.filter(alert => alert.type === "expiry").length;
   
   const handleMarkAsRead = (id: string) => {
     markAlertAsRead(id);
@@ -81,14 +82,13 @@ export default function Alerts() {
     });
   };
   
-  const handleView = (medicationId?: string) => {
+  const handleView = (medicationId: string) => {
     navigate("/medications");
     // In a real app, this would navigate to a specific medication detail page
   };
   
   // Get the medication data for each alert to show current stock and expiry
-  const getMedicationData = (medicationId?: string) => {
-    if (!medicationId) return null;
+  const getMedicationData = (medicationId: string) => {
     return medications.find(med => med.id === medicationId);
   };
   
@@ -217,7 +217,7 @@ export default function Alerts() {
       ) : (
         <div className="space-y-4">
           {filteredAlerts.map((alert) => {
-            const medication = getMedicationData(alert.relatedId);
+            const medication = getMedicationData(alert.medicationId);
             
             return (
               <Card 
@@ -227,17 +227,17 @@ export default function Alerts() {
                 <CardContent className="p-0">
                   <div className="flex items-start p-4 sm:p-6">
                     <div className="rounded-full p-2 mr-4 mt-1">
-                      {alert.type === "lowStock" ? (
-                        <Package className="h-8 w-8 text-amber-500" />
+                      {alert.type === "low-stock" ? (
+                        <Package className={`h-8 w-8 ${alert.severity === "high" ? "text-red-500" : alert.severity === "medium" ? "text-amber-500" : "text-yellow-500"}`} />
                       ) : (
-                        <Calendar className="h-8 w-8 text-red-500" />
+                        <Calendar className={`h-8 w-8 ${alert.severity === "high" ? "text-red-500" : alert.severity === "medium" ? "text-amber-500" : "text-yellow-500"}`} />
                       )}
                     </div>
                     
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center justify-between">
                         <h3 className="font-medium">
-                          {alert.type === "lowStock" ? "Low Stock Alert" : "Expiration Alert"}
+                          {alert.type === "low-stock" ? "Low Stock Alert" : "Expiration Alert"}
                         </h3>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
@@ -277,7 +277,7 @@ export default function Alerts() {
                       )}
                       
                       <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
-                        <Button size="sm" onClick={() => handleView(alert.relatedId)}>
+                        <Button size="sm" onClick={() => handleView(alert.medicationId)}>
                           <ExternalLink className="h-4 w-4 mr-1" />
                           View Medication
                         </Button>

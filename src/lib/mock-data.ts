@@ -1,39 +1,30 @@
 
-import { format, addDays, subDays } from "date-fns";
-import { Medication, Supplier, Transaction, Alert, DashboardStats, Customer, User } from "@/types";
+import { User, Medication, Supplier, Transaction, Alert, DashboardStats } from "@/types";
+import { addDays, format, subDays } from "date-fns";
 
-// Users
+// Mock Users
 export const users: User[] = [
   {
     id: "u1",
     name: "Admin User",
-    email: "admin@example.com",
-    password: "password",
+    email: "admin@pharmacy.com",
     role: "admin",
-    isActive: true,
-    avatar: "",
-    createdAt: "2025-01-01T00:00:00Z"
+    createdAt: "2023-01-15T00:00:00Z",
   },
   {
     id: "u2",
     name: "John Pharmacist",
-    email: "john@example.com",
-    password: "password",
+    email: "john@pharmacy.com",
     role: "pharmacist",
-    isActive: true,
-    avatar: "",
-    createdAt: "2025-01-15T00:00:00Z"
+    createdAt: "2023-02-20T00:00:00Z",
   },
   {
     id: "u3",
     name: "Sarah Staff",
-    email: "sarah@example.com",
-    password: "password",
+    email: "sarah@pharmacy.com",
     role: "staff",
-    isActive: true,
-    avatar: "",
-    createdAt: "2025-02-01T00:00:00Z"
-  }
+    createdAt: "2023-03-10T00:00:00Z",
+  },
 ];
 
 // Mock Suppliers
@@ -44,8 +35,7 @@ export const suppliers: Supplier[] = [
     email: "contact@medipharm.com",
     phone: "+1 (555) 123-4567",
     address: "123 Pharma Street, MediCity, MC 12345",
-    contactName: "Michael Johnson",
-    status: "active",
+    contactPerson: "Michael Johnson",
     createdAt: "2023-01-10T00:00:00Z",
     updatedAt: "2023-04-15T00:00:00Z",
   },
@@ -55,8 +45,7 @@ export const suppliers: Supplier[] = [
     email: "info@globalmeds.com",
     phone: "+1 (555) 987-6543",
     address: "456 Health Avenue, Medford, MD 67890",
-    contactName: "Emily Rodriguez",
-    status: "active",
+    contactPerson: "Emily Rodriguez",
     createdAt: "2023-02-05T00:00:00Z",
     updatedAt: "2023-04-20T00:00:00Z",
   },
@@ -66,8 +55,7 @@ export const suppliers: Supplier[] = [
     email: "support@pharmatech.com",
     phone: "+1 (555) 456-7890",
     address: "789 Medicine Boulevard, Healthville, HV 54321",
-    contactName: "Daniel Wilson",
-    status: "active",
+    contactPerson: "Daniel Wilson",
     createdAt: "2023-03-15T00:00:00Z",
     updatedAt: "2023-04-25T00:00:00Z",
   },
@@ -162,14 +150,14 @@ export const transactions: Transaction[] = [
         medicationId: "m1",
         medicationName: "Paracetamol 500mg",
         quantity: 2,
-        price: 5.99,
+        unitPrice: 5.99,
         subtotal: 11.98,
       },
       {
         medicationId: "m3",
         medicationName: "Loratadine 10mg",
         quantity: 1,
-        price: 8.49,
+        unitPrice: 8.49,
         subtotal: 8.49,
       },
     ],
@@ -187,7 +175,7 @@ export const transactions: Transaction[] = [
         medicationId: "m2",
         medicationName: "Amoxicillin 250mg",
         quantity: 1,
-        price: 12.99,
+        unitPrice: 12.99,
         subtotal: 12.99,
       },
     ],
@@ -205,19 +193,18 @@ export const transactions: Transaction[] = [
         medicationId: "m1",
         medicationName: "Paracetamol 500mg",
         quantity: 50,
-        price: 2.50,
+        unitPrice: 2.50,
         subtotal: 125.00,
       },
       {
         medicationId: "m4",
         medicationName: "Ibuprofen 400mg",
         quantity: 40,
-        price: 3.00,
+        unitPrice: 3.00,
         subtotal: 120.00,
       },
     ],
     total: 245.00,
-    customerName: "Supplier Order", // Added missing required property
     paymentMethod: "card",
     status: "completed",
     notes: "Monthly restock",
@@ -229,41 +216,42 @@ export const transactions: Transaction[] = [
 export const alerts: Alert[] = [
   {
     id: "a1",
-    type: "lowStock",
-    title: "Amoxicillin 250mg",
+    type: "low-stock",
+    medicationId: "m2",
+    medicationName: "Amoxicillin 250mg",
     message: "Stock below threshold (5 units remaining)",
+    severity: "high",
     isRead: false,
     createdAt: format(subDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    relatedId: "m2" // Added relatedId to reference the medication
   },
   {
     id: "a2",
-    type: "expiringSoon",
-    title: "Omeprazole 20mg",
+    type: "expiry",
+    medicationId: "m5",
+    medicationName: "Omeprazole 20mg",
     message: "Expires in 15 days",
+    severity: "medium",
     isRead: false,
     createdAt: format(subDays(new Date(), 2), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    relatedId: "m5"
   },
   {
     id: "a3",
-    type: "expiringSoon",
-    title: "Amoxicillin 250mg",
+    type: "expiry",
+    medicationId: "m2",
+    medicationName: "Amoxicillin 250mg",
     message: "Expires in 20 days",
+    severity: "medium",
     isRead: true,
     createdAt: format(subDays(new Date(), 3), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-    relatedId: "m2"
   },
 ];
 
 // Mock Dashboard Stats
 export const dashboardStats: DashboardStats = {
   totalMedications: medications.length,
-  lowStockItems: 2, // Changed from expiringCount to lowStockItems which is in the type
-  expiringItems: 2, // Added expiringItems which is in the type
+  lowStockCount: 2,
+  expiringCount: 2,
   totalSalesToday: 350.75,
-  totalSalesWeek: 1250.50, // Added missing required property
-  totalSalesMonth: 5250.25, // Added missing required property
   recentTransactions: transactions.slice(0, 3),
   topSelling: [
     { name: "Paracetamol 500mg", count: 120 },

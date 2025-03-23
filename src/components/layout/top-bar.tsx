@@ -26,7 +26,7 @@ export function TopBar() {
     markAlertAsRead(alert.id);
     
     // Navigate to relevant section based on alert type
-    if (alert.type === 'lowStock' || alert.type === 'expiringSoon') {
+    if (alert.type === 'low-stock' || alert.type === 'expiry') {
       navigate(`/medications`);
     }
   };
@@ -75,14 +75,14 @@ export function TopBar() {
                         <div className="flex items-center gap-2">
                           <Badge
                             variant={
-                              alert.type === "lowStock"
+                              alert.type === "low-stock"
                                 ? "destructive"
                                 : "outline"
                             }
                             className="h-1.5 w-1.5 rounded-full p-0"
                           />
                           <span className="font-medium">
-                            {alert.title}
+                            {alert.medicationName}
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -95,7 +95,7 @@ export function TopBar() {
                           variant="outline"
                           className="text-[10px] px-1 py-0"
                         >
-                          {alert.type === "lowStock"
+                          {alert.type === "low-stock"
                             ? "Low Stock"
                             : "Expiring Soon"}
                         </Badge>
