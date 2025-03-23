@@ -1,12 +1,12 @@
 
 import { Outlet } from "react-router-dom";
-import Sidebar from "./sidebar";
-import TopBar from "./top-bar";
+import { Sidebar } from "./sidebar";
+import { TopBar } from "./top-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function MainLayout() {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
