@@ -79,6 +79,7 @@ export interface DashboardStats {
   lowStockItems: number;
   expiringItems: number;
   recentTransactions: Transaction[];
+  topSelling?: { name: string; count: number }[];
 }
 
 export interface Customer {

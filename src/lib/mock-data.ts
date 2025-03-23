@@ -217,6 +217,7 @@ export const transactions: Transaction[] = [
       },
     ],
     total: 245.00,
+    customerName: "Supplier Order", // Added missing required property
     paymentMethod: "card",
     status: "completed",
     notes: "Monthly restock",
@@ -233,6 +234,7 @@ export const alerts: Alert[] = [
     message: "Stock below threshold (5 units remaining)",
     isRead: false,
     createdAt: format(subDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+    relatedId: "m2" // Added relatedId to reference the medication
   },
   {
     id: "a2",
@@ -241,6 +243,7 @@ export const alerts: Alert[] = [
     message: "Expires in 15 days",
     isRead: false,
     createdAt: format(subDays(new Date(), 2), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+    relatedId: "m5"
   },
   {
     id: "a3",
@@ -249,14 +252,18 @@ export const alerts: Alert[] = [
     message: "Expires in 20 days",
     isRead: true,
     createdAt: format(subDays(new Date(), 3), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+    relatedId: "m2"
   },
 ];
 
 // Mock Dashboard Stats
 export const dashboardStats: DashboardStats = {
   totalMedications: medications.length,
-  expiringCount: 2,
+  lowStockItems: 2, // Changed from expiringCount to lowStockItems which is in the type
+  expiringItems: 2, // Added expiringItems which is in the type
   totalSalesToday: 350.75,
+  totalSalesWeek: 1250.50, // Added missing required property
+  totalSalesMonth: 5250.25, // Added missing required property
   recentTransactions: transactions.slice(0, 3),
   topSelling: [
     { name: "Paracetamol 500mg", count: 120 },

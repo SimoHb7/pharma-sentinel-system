@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +39,7 @@ import { Transaction, TransactionItem } from "@/types";
 import { Search, Plus, ShoppingCart, FileText } from "lucide-react";
 
 export default function Sales() {
-  const { medications, customers, transactions, addTransaction } = usePharmacy();
+  const { medications, transactions, addTransaction } = usePharmacy();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isNewSaleDialogOpen, setIsNewSaleDialogOpen] = useState(false);
@@ -265,7 +264,7 @@ export default function Sales() {
             <TableBody>
               {filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell>{formatDate(new Date(transaction.createdAt))}</TableCell>
+                  <TableCell>{formatDate(transaction.createdAt)}</TableCell>
                   <TableCell className="font-medium">{transaction.id}</TableCell>
                   <TableCell>{transaction.customerName}</TableCell>
                   <TableCell>{transaction.items.length} items</TableCell>
@@ -295,14 +294,12 @@ export default function Sales() {
         </div>
       )}
       
-      {/* New Sale Dialog */}
       <Dialog open={isNewSaleDialogOpen} onOpenChange={setIsNewSaleDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Create New Sale</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            {/* Customer Info */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="customerName">Customer Name</Label>
@@ -332,7 +329,6 @@ export default function Sales() {
               </div>
             </div>
             
-            {/* Add Items */}
             <Card>
               <CardHeader className="py-3">
                 <CardTitle className="text-sm font-medium">Add Items</CardTitle>
@@ -416,7 +412,6 @@ export default function Sales() {
               </CardContent>
             </Card>
             
-            {/* Notes */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
               <Textarea
@@ -438,7 +433,6 @@ export default function Sales() {
         </DialogContent>
       </Dialog>
       
-      {/* Receipt Dialog */}
       {selectedTransaction && (
         <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
           <DialogContent className="sm:max-w-[400px]">
@@ -455,7 +449,7 @@ export default function Sales() {
               <div className="border-t border-b py-2 mb-4">
                 <div className="flex justify-between">
                   <span className="text-sm">Date:</span>
-                  <span className="text-sm">{formatDate(new Date(selectedTransaction.createdAt))}</span>
+                  <span className="text-sm">{formatDate(selectedTransaction.createdAt)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Receipt No:</span>

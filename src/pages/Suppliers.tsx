@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,13 +49,14 @@ export default function Suppliers() {
     email: "",
     phone: "",
     address: "",
-    contactPerson: ""
+    contactName: "",
+    status: "active" as "active" | "inactive"
   });
 
   const filteredSuppliers = suppliers.filter(supplier => 
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
+    supplier.contactName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddSupplier = () => {
@@ -67,7 +67,8 @@ export default function Suppliers() {
       email: "",
       phone: "",
       address: "",
-      contactPerson: ""
+      contactName: "",
+      status: "active"
     });
     toast({
       title: "Supplier Added",
@@ -151,7 +152,7 @@ export default function Suppliers() {
               {filteredSuppliers.map((supplier) => (
                 <TableRow key={supplier.id}>
                   <TableCell className="font-medium">{supplier.name}</TableCell>
-                  <TableCell>{supplier.contactPerson}</TableCell>
+                  <TableCell>{supplier.contactName}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
@@ -207,7 +208,6 @@ export default function Suppliers() {
         </div>
       )}
 
-      {/* Add Supplier Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -223,11 +223,11 @@ export default function Suppliers() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="contactPerson">Contact Person</Label>
+              <Label htmlFor="contactName">Contact Person</Label>
               <Input
-                id="contactPerson"
-                value={newSupplier.contactPerson}
-                onChange={(e) => setNewSupplier({ ...newSupplier, contactPerson: e.target.value })}
+                id="contactName"
+                value={newSupplier.contactName}
+                onChange={(e) => setNewSupplier({ ...newSupplier, contactName: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -268,7 +268,6 @@ export default function Suppliers() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Supplier Dialog */}
       {currentSupplier && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
@@ -285,11 +284,11 @@ export default function Suppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-contactPerson">Contact Person</Label>
+                <Label htmlFor="edit-contactName">Contact Person</Label>
                 <Input
-                  id="edit-contactPerson"
-                  value={currentSupplier.contactPerson}
-                  onChange={(e) => setCurrentSupplier({ ...currentSupplier, contactPerson: e.target.value })}
+                  id="edit-contactName"
+                  value={currentSupplier.contactName}
+                  onChange={(e) => setCurrentSupplier({ ...currentSupplier, contactName: e.target.value })}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -331,7 +330,6 @@ export default function Suppliers() {
         </Dialog>
       )}
 
-      {/* Delete Confirmation Dialog */}
       {currentSupplier && (
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">

@@ -46,13 +46,13 @@ export function AlertsOverview() {
               >
                 <div>
                   <Badge
-                    variant={alert.type === "low-stock" ? "destructive" : "outline"}
+                    variant={alert.type === "lowStock" ? "destructive" : "outline"}
                     className="h-2 w-2 rounded-full p-0 mr-2 mt-2"
                   />
                 </div>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{alert.medicationName}</p>
+                    <p className="text-sm font-medium">{alert.title}</p>
                     <span className="text-xs text-muted-foreground">
                       {formatDate(alert.createdAt)}
                     </span>
@@ -63,7 +63,7 @@ export function AlertsOverview() {
                       variant="outline"
                       className="text-xs px-2 py-0"
                     >
-                      {alert.type === "low-stock" ? "Low Stock" : "Expiring Soon"}
+                      {alert.type === "lowStock" ? "Low Stock" : "Expiring Soon"}
                     </Badge>
                     {!alert.isRead && (
                       <Button 
