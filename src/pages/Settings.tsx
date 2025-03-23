@@ -1,134 +1,119 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@/components/ui/tabs";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Switch
-} from "@/components/ui/switch";
-import { useAuth } from "@/contexts/AuthContext";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Settings as SettingsIcon, 
-  User, 
-  Bell, 
-  Shield, 
-  Mail, 
-  CreditCard, 
-  Printer,
-  Save, 
-  AlertTriangle
-} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePharmacy } from "@/contexts/PharmacyContext";
+import { User, Role } from "@/types";
+import { Settings as SettingsIcon, Users, Bell, Shield, MoreVertical, Edit, Trash, Plus } from "lucide-react";
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const { users, addUser, updateUser, deleteUser } = usePharmacy();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("general");
   
-  // General settings
-  const [pharmacyName, setPharmacyName] = useState("PharmSentinel");
-  const [pharmacyAddress, setPharmacyAddress] = useState("123 Pharmacy Street, Medical City");
-  const [pharmacyPhone, setPharmacyPhone] = useState("(555) 123-4567");
-  const [pharmacyEmail, setPharmacyEmail] = useState("contact@pharmsentinel.com");
-  const [timezone, setTimezone] = useState("UTC-5");
-  const [dateFormat, setDateFormat] = useState("MM/DD/YYYY");
+  const [newUser, setNewUser] = useState<Omit<User, "id" | "createdAt">>({
+    name: "",
+    email: "",
+    password: "",
+    role: "staff" as Role,
+    isActive: true,
+    avatar: ""
+  });
   
-  // Notification settings
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [smsNotifications, setSmsNotifications] = useState(false);
-  const [stockAlerts, setStockAlerts] = useState(true);
-  const [stockThreshold, setStockThreshold] = useState("10");
-  const [expiryAlerts, setExpiryAlerts] = useState(true);
-  const [expiryDays, setExpiryDays] = useState("30");
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+  const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   
-  // Receipt settings
-  const [showLogo, setShowLogo] = useState(true);
-  const [showTaxId, setShowTaxId] = useState(true);
-  const [taxId, setTaxId] = useState("12-3456789");
-  const [receiptFooter, setReceiptFooter] = useState("Thank you for your purchase!");
-  const [receiptCopies, setReceiptCopies] = useState("1");
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    stockAlerts: true,
+    expiryAlerts: true,
+    salesSummary: false,
+    systemUpdates: true
+  });
   
-  // User settings
-  const [userName, setUserName] = useState(user?.name || "");
-  const [userEmail, setUserEmail] = useState(user?.email || "");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  
-  // User role management (mock data in a real app, this would be fetched from backend)
-  const [users, setUsers] = useState([
-    { id: "u1", name: "Admin User", email: "admin@example.com", role: "admin" },
-    { id: "u2", name: "Pharmacist One", email: "pharmacist1@example.com", role: "pharmacist" },
-    { id: "u3", name: "Staff Member", email: "staff@example.com", role: "staff" }
-  ]);
-  
-  const handleSaveSettings = (type: string) => {
-    // In a real app, this would save to backend
-    toast({
-      title: "Settings Saved",
-      description: `Your ${type} settings have been updated successfully.`
-    });
-  };
-  
-  const handleUpdatePassword = () => {
-    if (!currentPassword) {
+  const handleAddUser = () => {
+    if (!newUser.name || !newUser.email || !newUser.password) {
       toast({
-        title: "Error",
-        description: "Please enter your current password.",
+        title: "Missing Information",
+        description: "Please provide all required user information.",
         variant: "destructive"
       });
       return;
     }
     
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // In a real app, this would verify and update the password
-    toast({
-      title: "Password Updated",
-      description: "Your password has been updated successfully."
+    addUser(newUser);
+    setIsAddUserDialogOpen(false);
+    setNewUser({
+      name: "",
+      email: "",
+      password: "",
+      role: "staff",
+      isActive: true,
+      avatar: ""
     });
-    
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
   };
   
-  const handleUpdateRole = (userId: string, newRole: string) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, role: newRole } : user
-    ));
+  const handleEditUser = () => {
+    if (!currentUser) return;
     
-    toast({
-      title: "Role Updated",
-      description: `User role has been updated to ${newRole}.`
-    });
+    updateUser(currentUser.id, currentUser);
+    setIsEditUserDialogOpen(false);
+  };
+  
+  const handleDeleteUser = () => {
+    if (!currentUser) return;
+    
+    deleteUser(currentUser.id);
+    setIsDeleteUserDialogOpen(false);
   };
   
   return (
@@ -136,481 +121,510 @@ export default function Settings() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">
-          Manage your account and system settings
+          Manage your pharmacy system settings and preferences
         </p>
       </div>
       
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full h-auto sm:h-10">
-          <TabsTrigger value="general" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3 sm:w-auto">
+          <TabsTrigger value="general">
             <SettingsIcon className="h-4 w-4 mr-2" />
-            <span className="sm:inline hidden">General</span>
+            General
           </TabsTrigger>
-          <TabsTrigger value="notification" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="users">
+            <Users className="h-4 w-4 mr-2" />
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="notifications">
             <Bell className="h-4 w-4 mr-2" />
-            <span className="sm:inline hidden">Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger value="receipt" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Printer className="h-4 w-4 mr-2" />
-            <span className="sm:inline hidden">Receipts</span>
-          </TabsTrigger>
-          <TabsTrigger value="account" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <User className="h-4 w-4 mr-2" />
-            <span className="sm:inline hidden">Account</span>
-          </TabsTrigger>
-          <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Shield className="h-4 w-4 mr-2" />
-            <span className="sm:inline hidden">Users</span>
+            Notifications
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="general" className="space-y-4">
+        <TabsContent value="general" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>General Settings</CardTitle>
               <CardDescription>
-                Manage your pharmacy's general information and preferences
+                Configure general system settings and preferences
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="pharmacyName">Pharmacy Name</Label>
+                <Input id="pharmacyName" defaultValue="Pharmacy Management System" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" defaultValue="123 Medical Street, Healthcare City" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pharmacy-name">Pharmacy Name</Label>
-                  <Input 
-                    id="pharmacy-name" 
-                    value={pharmacyName} 
-                    onChange={(e) => setPharmacyName(e.target.value)} 
-                  />
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input id="phone" defaultValue="(123) 456-7890" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="pharmacy-phone">Phone Number</Label>
-                  <Input 
-                    id="pharmacy-phone" 
-                    value={pharmacyPhone} 
-                    onChange={(e) => setPharmacyPhone(e.target.value)} 
-                  />
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" defaultValue="contact@pharmacymanagement.com" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pharmacy-email">Email Address</Label>
-                  <Input 
-                    id="pharmacy-email" 
-                    type="email"
-                    value={pharmacyEmail} 
-                    onChange={(e) => setPharmacyEmail(e.target.value)} 
-                  />
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select defaultValue="UTC-5">
+                  <SelectTrigger id="timezone">
+                    <SelectValue placeholder="Select a timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="UTC-8">Pacific Time (UTC-8)</SelectItem>
+                    <SelectItem value="UTC-7">Mountain Time (UTC-7)</SelectItem>
+                    <SelectItem value="UTC-6">Central Time (UTC-6)</SelectItem>
+                    <SelectItem value="UTC-5">Eastern Time (UTC-5)</SelectItem>
+                    <SelectItem value="UTC">UTC</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Select defaultValue="USD">
+                  <SelectTrigger id="currency">
+                    <SelectValue placeholder="Select a currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">US Dollar ($)</SelectItem>
+                    <SelectItem value="EUR">Euro (€)</SelectItem>
+                    <SelectItem value="GBP">British Pound (£)</SelectItem>
+                    <SelectItem value="CAD">Canadian Dollar (C$)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button>Save Changes</Button>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>System Information</CardTitle>
+              <CardDescription>
+                View information about your system
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-y-4">
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">Version</div>
+                  <div>1.0.0</div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pharmacy-address">Address</Label>
-                  <Input 
-                    id="pharmacy-address" 
-                    value={pharmacyAddress} 
-                    onChange={(e) => setPharmacyAddress(e.target.value)} 
-                  />
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">Last Updated</div>
+                  <div>March 24, 2025</div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select value={timezone} onValueChange={setTimezone}>
-                    <SelectTrigger id="timezone">
-                      <SelectValue placeholder="Select timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="UTC-8">Pacific Time (UTC-8)</SelectItem>
-                      <SelectItem value="UTC-7">Mountain Time (UTC-7)</SelectItem>
-                      <SelectItem value="UTC-6">Central Time (UTC-6)</SelectItem>
-                      <SelectItem value="UTC-5">Eastern Time (UTC-5)</SelectItem>
-                      <SelectItem value="UTC+0">UTC</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">Database Status</div>
+                  <div className="text-green-500">Connected</div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date-format">Date Format</Label>
-                  <Select value={dateFormat} onValueChange={setDateFormat}>
-                    <SelectTrigger id="date-format">
-                      <SelectValue placeholder="Select date format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                      <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                      <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">License</div>
+                  <div>Professional</div>
                 </div>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button onClick={() => handleSaveSettings("general")}>
-                <Save className="h-4 w-4 mr-2" />
-                Save General Settings
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
         
-        <TabsContent value="notification" className="space-y-4">
+        <TabsContent value="users" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-medium">User Management</h2>
+              <p className="text-sm text-muted-foreground">Manage system users and access control</p>
+            </div>
+            {hasRole('admin') && (
+              <Button onClick={() => setIsAddUserDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+            )}
+          </div>
+          
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map(user => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium uppercase">
+                            {user.name.charAt(0)}
+                          </div>
+                          <span>{user.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {user.role === 'admin' ? (
+                            <Shield className="h-4 w-4 text-primary" />
+                          ) : null}
+                          <span className="capitalize">{user.role}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {hasRole('admin') && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setCurrentUser(user);
+                                setIsEditUserDialogOpen(true);
+                              }}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => {
+                                  setCurrentUser(user);
+                                  setIsDeleteUserDialogOpen(true);
+                                }}
+                              >
+                                <Trash className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Role Permissions</CardTitle>
+              <CardDescription>
+                Understand the access levels for different user roles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-medium mb-2">Admin</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Full access to all system features, including user management, system settings, and all data operations.
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="font-medium mb-2">Pharmacist</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Access to medication management, sales, customer data, and reports. Cannot modify system settings or manage users.
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="font-medium mb-2">Staff</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Limited access to record sales, view inventory, and handle customer interactions. Cannot modify medication data or view sensitive reports.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Notification Settings</CardTitle>
               <CardDescription>
-                Configure how and when you want to receive alerts
+                Configure how and when you receive system notifications
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Notification Methods</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="email-notifications">Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive alerts and system notifications via email
-                      </p>
-                    </div>
-                    <Switch 
-                      id="email-notifications" 
-                      checked={emailNotifications} 
-                      onCheckedChange={setEmailNotifications} 
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="sms-notifications">SMS Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive urgent alerts via SMS
-                      </p>
-                    </div>
-                    <Switch 
-                      id="sms-notifications" 
-                      checked={smsNotifications} 
-                      onCheckedChange={setSmsNotifications} 
-                    />
-                  </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="emailNotifications">Email Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive notifications via email
+                  </p>
                 </div>
+                <Switch
+                  id="emailNotifications"
+                  checked={notificationSettings.emailNotifications}
+                  onCheckedChange={(checked) => 
+                    setNotificationSettings({...notificationSettings, emailNotifications: checked})
+                  }
+                />
               </div>
               
+              <Separator />
+              
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Alert Settings</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="stock-alerts">Low Stock Alerts</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Get notified when inventory levels are low
-                      </p>
-                    </div>
-                    <Switch 
-                      id="stock-alerts" 
-                      checked={stockAlerts} 
-                      onCheckedChange={setStockAlerts} 
-                    />
-                  </div>
-                  
-                  {stockAlerts && (
-                    <div className="pl-6 border-l-2 border-muted space-y-2">
-                      <Label htmlFor="stock-threshold">Stock Threshold</Label>
-                      <div className="flex gap-2 items-center">
-                        <span className="text-sm text-muted-foreground">Alert when stock falls below</span>
-                        <Input 
-                          id="stock-threshold" 
-                          value={stockThreshold} 
-                          onChange={(e) => setStockThreshold(e.target.value)} 
-                          className="w-20"
-                          type="number"
-                          min="0"
-                        />
-                        <span className="text-sm text-muted-foreground">units</span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="expiry-alerts">Expiration Alerts</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Get notified when medications are approaching expiry
-                      </p>
-                    </div>
-                    <Switch 
-                      id="expiry-alerts" 
-                      checked={expiryAlerts} 
-                      onCheckedChange={setExpiryAlerts} 
-                    />
-                  </div>
-                  
-                  {expiryAlerts && (
-                    <div className="pl-6 border-l-2 border-muted space-y-2">
-                      <Label htmlFor="expiry-days">Days Before Expiry</Label>
-                      <div className="flex gap-2 items-center">
-                        <span className="text-sm text-muted-foreground">Alert</span>
-                        <Input 
-                          id="expiry-days" 
-                          value={expiryDays} 
-                          onChange={(e) => setExpiryDays(e.target.value)} 
-                          className="w-20"
-                          type="number"
-                          min="1"
-                        />
-                        <span className="text-sm text-muted-foreground">days before expiry date</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => handleSaveSettings("notification")}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Notification Settings
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="receipt" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Receipt & Invoice Settings</CardTitle>
-              <CardDescription>
-                Customize how your pharmacy receipts and invoices appear
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Alert Types</h3>
+                
                 <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="show-logo">Show Logo on Receipts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Display your pharmacy logo on printed receipts
+                  <div>
+                    <Label htmlFor="stockAlerts">Stock Alerts</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Low stock and out-of-stock notifications
                     </p>
                   </div>
-                  <Switch 
-                    id="show-logo" 
-                    checked={showLogo} 
-                    onCheckedChange={setShowLogo} 
+                  <Switch
+                    id="stockAlerts"
+                    checked={notificationSettings.stockAlerts}
+                    onCheckedChange={(checked) => 
+                      setNotificationSettings({...notificationSettings, stockAlerts: checked})
+                    }
                   />
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="show-tax-id">Show Tax ID on Receipts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Include your tax ID number on receipts
+                  <div>
+                    <Label htmlFor="expiryAlerts">Expiry Alerts</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Notifications for medications nearing expiry date
                     </p>
                   </div>
-                  <Switch 
-                    id="show-tax-id" 
-                    checked={showTaxId} 
-                    onCheckedChange={setShowTaxId} 
+                  <Switch
+                    id="expiryAlerts"
+                    checked={notificationSettings.expiryAlerts}
+                    onCheckedChange={(checked) => 
+                      setNotificationSettings({...notificationSettings, expiryAlerts: checked})
+                    }
                   />
                 </div>
                 
-                {showTaxId && (
-                  <div className="space-y-2">
-                    <Label htmlFor="tax-id">Tax ID Number</Label>
-                    <Input 
-                      id="tax-id" 
-                      value={taxId} 
-                      onChange={(e) => setTaxId(e.target.value)} 
-                    />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="salesSummary">Sales Summary</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Daily and weekly sales summary reports
+                    </p>
                   </div>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="receipt-footer">Receipt Footer Message</Label>
-                  <Input 
-                    id="receipt-footer" 
-                    value={receiptFooter} 
-                    onChange={(e) => setReceiptFooter(e.target.value)} 
+                  <Switch
+                    id="salesSummary"
+                    checked={notificationSettings.salesSummary}
+                    onCheckedChange={(checked) => 
+                      setNotificationSettings({...notificationSettings, salesSummary: checked})
+                    }
                   />
-                  <p className="text-xs text-muted-foreground">
-                    This message will appear at the bottom of all receipts
-                  </p>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="receipt-copies">Number of Receipt Copies</Label>
-                  <Input 
-                    id="receipt-copies" 
-                    type="number"
-                    min="1"
-                    max="3"
-                    value={receiptCopies} 
-                    onChange={(e) => setReceiptCopies(e.target.value)} 
-                    className="w-20"
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="systemUpdates">System Updates</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Notifications about system updates and maintenance
+                    </p>
+                  </div>
+                  <Switch
+                    id="systemUpdates"
+                    checked={notificationSettings.systemUpdates}
+                    onCheckedChange={(checked) => 
+                      setNotificationSettings({...notificationSettings, systemUpdates: checked})
+                    }
                   />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => handleSaveSettings("receipt")}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Receipt Settings
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="account" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Settings</CardTitle>
-              <CardDescription>
-                Manage your personal account information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="user-name">Full Name</Label>
-                  <Input 
-                    id="user-name" 
-                    value={userName} 
-                    onChange={(e) => setUserName(e.target.value)} 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="user-email">Email Address</Label>
-                  <Input 
-                    id="user-email" 
-                    type="email"
-                    value={userEmail} 
-                    onChange={(e) => setUserEmail(e.target.value)}
-                    disabled 
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Email address cannot be changed
-                  </p>
                 </div>
               </div>
               
-              <div className="border-t pt-4 mt-6">
-                <h3 className="text-lg font-medium mb-4">Change Password</h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <Input 
-                      id="current-password" 
-                      type="password"
-                      value={currentPassword} 
-                      onChange={(e) => setCurrentPassword(e.target.value)} 
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">New Password</Label>
-                      <Input 
-                        id="new-password" 
-                        type="password"
-                        value={newPassword} 
-                        onChange={(e) => setNewPassword(e.target.value)} 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm New Password</Label>
-                      <Input 
-                        id="confirm-password" 
-                        type="password"
-                        value={confirmPassword} 
-                        onChange={(e) => setConfirmPassword(e.target.value)} 
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              <Button onClick={() => handleSaveSettings("account")}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Account Settings
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleUpdatePassword}
-                disabled={!currentPassword || !newPassword || !confirmPassword}
-              >
-                <Shield className="h-4 w-4 mr-2" />
-                Update Password
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="users" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Manage user accounts and permissions
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border rounded-md">
-                <div className="grid grid-cols-4 bg-muted p-3 rounded-t-md font-medium text-sm">
-                  <div>Name</div>
-                  <div>Email</div>
-                  <div>Role</div>
-                  <div className="text-right">Actions</div>
-                </div>
-                
-                {users.map((user) => (
-                  <div 
-                    key={user.id} 
-                    className="grid grid-cols-4 p-3 items-center border-t first:border-t-0"
-                  >
-                    <div className="font-medium">{user.name}</div>
-                    <div className="text-sm">{user.email}</div>
-                    <div>
-                      <Select
-                        value={user.role}
-                        onValueChange={(value) => handleUpdateRole(user.id, value)}
-                        disabled={user.id === "u1"} // Don't allow changing the admin role
-                      >
-                        <SelectTrigger className="h-8 w-40">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="pharmacist">Pharmacist</SelectItem>
-                          <SelectItem value="staff">Staff</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex justify-end">
-                      <Button variant="ghost" size="sm" title="This feature is not available in the demo">
-                        <Mail className="h-4 w-4" />
-                        <span className="sr-only">Email</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-destructive"
-                        disabled={user.id === "u1"} // Don't allow removing the admin
-                        title={user.id === "u1" ? "Cannot remove admin user" : "This feature is not available in the demo"}
-                      >
-                        <AlertTriangle className="h-4 w-4" />
-                        <span className="sr-only">Remove</span>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="rounded-md bg-muted p-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="flex-1">
-                    <h3 className="font-medium">Invite New User</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Send an invitation to a new team member
-                    </p>
-                  </div>
-                  <Button variant="default" title="This feature is not available in the demo">
-                    Add User
-                  </Button>
-                </div>
-              </div>
+              <Button>Save Notification Settings</Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Add User Dialog */}
+      <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                value={newUser.name}
+                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select 
+                value={newUser.role} 
+                onValueChange={(value: Role) => setNewUser({ ...newUser, role: value })}
+              >
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="pharmacist">Pharmacist</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isActive"
+                checked={newUser.isActive}
+                onCheckedChange={(checked) => setNewUser({ ...newUser, isActive: checked })}
+              />
+              <Label htmlFor="isActive">Account Active</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddUser}>
+              Add User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit User Dialog */}
+      {currentUser && (
+        <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
+          <DialogContent className="sm:max-w-[450px]">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name</Label>
+                <Input
+                  id="edit-name"
+                  value={currentUser.name}
+                  onChange={(e) => setCurrentUser({ ...currentUser, name: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={currentUser.email}
+                  onChange={(e) => setCurrentUser({ ...currentUser, email: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Role</Label>
+                <Select 
+                  value={currentUser.role} 
+                  onValueChange={(value: Role) => setCurrentUser({ ...currentUser, role: value })}
+                >
+                  <SelectTrigger id="edit-role">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="pharmacist">Pharmacist</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="edit-isActive"
+                  checked={currentUser.isActive}
+                  onCheckedChange={(checked) => setCurrentUser({ ...currentUser, isActive: checked })}
+                />
+                <Label htmlFor="edit-isActive">Account Active</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditUserDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditUser}>
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* Delete User Confirmation */}
+      {currentUser && (
+        <Dialog open={isDeleteUserDialogOpen} onOpenChange={setIsDeleteUserDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p>
+                Are you sure you want to delete the user <strong>{currentUser.name}</strong>? This action cannot be undone.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteUserDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteUser}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

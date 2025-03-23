@@ -1,30 +1,37 @@
+import { Medication, Supplier, Transaction, Alert, DashboardStats, Customer, User } from "@/types";
 
-import { User, Medication, Supplier, Transaction, Alert, DashboardStats } from "@/types";
-import { addDays, format, subDays } from "date-fns";
-
-// Mock Users
+// Users
 export const users: User[] = [
   {
     id: "u1",
     name: "Admin User",
-    email: "admin@pharmacy.com",
+    email: "admin@example.com",
+    password: "password",
     role: "admin",
-    createdAt: "2023-01-15T00:00:00Z",
+    isActive: true,
+    avatar: "",
+    createdAt: "2025-01-01T00:00:00Z"
   },
   {
     id: "u2",
     name: "John Pharmacist",
-    email: "john@pharmacy.com",
+    email: "john@example.com",
+    password: "password",
     role: "pharmacist",
-    createdAt: "2023-02-20T00:00:00Z",
+    isActive: true,
+    avatar: "",
+    createdAt: "2025-01-15T00:00:00Z"
   },
   {
     id: "u3",
     name: "Sarah Staff",
-    email: "sarah@pharmacy.com",
+    email: "sarah@example.com",
+    password: "password",
     role: "staff",
-    createdAt: "2023-03-10T00:00:00Z",
-  },
+    isActive: true,
+    avatar: "",
+    createdAt: "2025-02-01T00:00:00Z"
+  }
 ];
 
 // Mock Suppliers

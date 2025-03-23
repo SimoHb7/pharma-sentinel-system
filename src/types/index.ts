@@ -1,9 +1,14 @@
 
+export type Role = "admin" | "pharmacist" | "staff";
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'pharmacist' | 'staff';
+  password: string;
+  role: Role;
+  isActive: boolean;
+  avatar?: string;
   createdAt: string;
 }
 
@@ -26,51 +31,64 @@ export interface Medication {
 export interface Supplier {
   id: string;
   name: string;
+  contactName: string;
   email: string;
   phone: string;
   address: string;
-  contactPerson: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Transaction {
-  id: string;
-  type: 'purchase' | 'sale';
-  items: TransactionItem[];
-  total: number;
-  customerId?: string;
-  customerName?: string;
-  paymentMethod: 'cash' | 'card' | 'insurance';
-  status: 'completed' | 'pending' | 'cancelled';
+  status: "active" | "inactive";
   notes?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface TransactionItem {
   medicationId: string;
   medicationName: string;
   quantity: number;
-  unitPrice: number;
+  price: number;
   subtotal: number;
+}
+
+export interface Transaction {
+  id: string;
+  type: "sale" | "purchase";
+  items: TransactionItem[];
+  total: number;
+  customerName: string;
+  paymentMethod: string;
+  status: string;
+  notes?: string;
+  createdAt: string;
 }
 
 export interface Alert {
   id: string;
-  type: 'low-stock' | 'expiry';
-  medicationId: string;
-  medicationName: string;
+  title: string;
   message: string;
-  severity: 'high' | 'medium' | 'low';
+  type: "lowStock" | "expiringSoon" | "system";
   isRead: boolean;
   createdAt: string;
+  relatedId?: string;
 }
 
 export interface DashboardStats {
-  totalMedications: number;
-  lowStockCount: number;
-  expiringCount: number;
   totalSalesToday: number;
+  totalSalesWeek: number;
+  totalSalesMonth: number;
+  totalMedications: number;
+  lowStockItems: number;
+  expiringItems: number;
   recentTransactions: Transaction[];
-  topSelling: { name: string; count: number }[];
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  joinedDate: string;
+  lastPurchase?: string;
+  totalSpent: number;
+  notes?: string;
 }
