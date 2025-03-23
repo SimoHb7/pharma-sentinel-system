@@ -52,6 +52,7 @@ import {
   Lock
 } from "lucide-react";
 import { User as UserType } from "@/types";
+import { Badge } from "@/components/ui/badge";
 
 export default function Settings() {
   const { user, hasPermission, allUsers, addUser, updateUser, deleteUser } = useAuth();
@@ -830,4 +831,3 @@ export default function Settings() {
   );
 }
 
-function
