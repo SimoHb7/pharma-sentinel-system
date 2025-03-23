@@ -218,7 +218,10 @@ export default function Settings() {
           </TabsTrigger>
         </TabsList>
         
+        
+        
         <TabsContent value="general" className="space-y-4">
+          
           <Card>
             <CardHeader>
               <CardTitle>General Settings</CardTitle>
@@ -227,6 +230,7 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="pharmacy-name">Pharmacy Name</Label>
@@ -304,6 +308,7 @@ export default function Settings() {
         </TabsContent>
         
         <TabsContent value="notification" className="space-y-4">
+          
           <Card>
             <CardHeader>
               <CardTitle>Notification Settings</CardTitle>
@@ -312,6 +317,7 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Notification Methods</h3>
                 <div className="space-y-4">
@@ -426,6 +432,7 @@ export default function Settings() {
         </TabsContent>
         
         <TabsContent value="receipt" className="space-y-4">
+          
           <Card>
             <CardHeader>
               <CardTitle>Receipt & Invoice Settings</CardTitle>
@@ -434,6 +441,7 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -513,6 +521,7 @@ export default function Settings() {
         </TabsContent>
         
         <TabsContent value="account" className="space-y-4">
+          
           <Card>
             <CardHeader>
               <CardTitle>Account Settings</CardTitle>
@@ -521,6 +530,7 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="user-name">Full Name</Label>
@@ -598,6 +608,7 @@ export default function Settings() {
         </TabsContent>
         
         <TabsContent value="users" className="space-y-4">
+          
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -830,4 +841,3 @@ export default function Settings() {
     </div>
   );
 }
-

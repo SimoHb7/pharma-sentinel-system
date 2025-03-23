@@ -58,10 +58,11 @@ export interface TransactionItem {
 
 export interface Alert {
   id: string;
-  type: 'lowStock' | 'expiringSoon' | 'system';
-  title: string;
-  relatedId: string;
+  type: 'low-stock' | 'expiry' | 'system';
+  medicationId: string;
+  medicationName: string;
   message: string;
+  severity?: 'low' | 'medium' | 'high';
   isRead: boolean;
   createdAt: string;
 }
