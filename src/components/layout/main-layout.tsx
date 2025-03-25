@@ -1,4 +1,5 @@
 
+import React, { useEffect, useState } from "react";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./top-bar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,7 +7,6 @@ import LoginPage from "@/pages/Login";
 import { cn } from "@/lib/utils";
 import { Outlet } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 

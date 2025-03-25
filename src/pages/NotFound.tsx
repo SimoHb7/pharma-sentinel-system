@@ -1,6 +1,6 @@
 
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -16,7 +16,7 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="text-center max-w-md animate-fade-in">
+      <div className="text-center max-w-md animate-fadeIn">
         <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
           <span className="text-4xl font-bold">404</span>
         </div>
