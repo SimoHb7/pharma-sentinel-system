@@ -14,11 +14,16 @@ export default function Settings() {
   const { user, allUsers, addUser, updateUser, deleteUser, hasPermission } = useAuth();
   const canManageUsers = hasPermission('manage-users');
   
-  // New user form state
-  const [newUser, setNewUser] = useState({
+  // Fix the type error by properly typing newUser with a type that matches User['role']
+  const [newUser, setNewUser] = useState<{
+    name: string;
+    email: string;
+    role: User['role']; // This ensures role can only be one of the allowed values
+    password: string;
+  }>({
     name: "",
     email: "",
-    role: "staff" as const,
+    role: "staff",
     password: ""
   });
   
@@ -46,7 +51,7 @@ export default function Settings() {
       setNewUser({
         name: "",
         email: "",
-        role: "staff" as const,
+        role: "staff",
         password: ""
       });
     } catch (error) {
@@ -181,10 +186,10 @@ export default function Settings() {
                       <Label>Role</Label>
                       <RadioGroup 
                         value={newUser.role} 
-                        onValueChange={(value) => 
+                        onValueChange={(value: User['role']) => 
                           setNewUser({
                             ...newUser, 
-                            role: value as User['role']
+                            role: value
                           })
                         }
                         className="flex space-x-4"

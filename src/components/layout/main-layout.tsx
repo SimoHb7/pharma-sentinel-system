@@ -73,14 +73,16 @@ export default function MainLayout() {
         ></div>
       )}
       
-      {/* Main content */}
+      {/* Main content - Fixed alignment by adjusting margin and centering */}
       <div className={cn(
         "flex flex-col flex-1 w-full overflow-hidden transition-all duration-300",
         sidebarOpen && !isMobile ? "ml-64" : "ml-0"
       )}>
         <TopBar />
         <main className="flex-1 overflow-auto p-6 mx-auto w-full max-w-screen-2xl">
-          <Outlet />
+          <div className="w-full max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
