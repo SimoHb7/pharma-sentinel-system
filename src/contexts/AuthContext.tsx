@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User } from "@/types";
-import { users } from "@/lib/mock-data";
+import { mockUsers } from "@/lib/mock-data";
 import { toast } from "@/hooks/use-toast";
 
 interface AuthContextType {
@@ -54,7 +53,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [allUsers, setAllUsers] = useState<User[]>(users);
+  const [allUsers, setAllUsers] = useState<User[]>(mockUsers);
 
   useEffect(() => {
     // Check for saved user in localStorage

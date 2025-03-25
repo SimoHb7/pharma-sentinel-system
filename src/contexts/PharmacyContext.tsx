@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState } from "react";
-import { medications, suppliers, transactions, alerts, dashboardStats } from "@/lib/mock-data";
+import { mockMedications, mockSuppliers, mockTransactions, mockAlerts, mockDashboardStats, generateId } from "@/lib/mock-data";
 import { 
   Medication, 
   Supplier, 
@@ -8,7 +9,6 @@ import {
   DashboardStats,
   TransactionItem
 } from "@/types";
-import { generateId, uuidv4 } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
 interface PharmacyContextType {
@@ -41,11 +41,11 @@ interface PharmacyContextType {
 const PharmacyContext = createContext<PharmacyContextType | undefined>(undefined);
 
 export function PharmacyProvider({ children }: { children: React.ReactNode }) {
-  const [medsState, setMedications] = useState<Medication[]>(medications);
-  const [suppliersState, setSuppliers] = useState<Supplier[]>(suppliers);
-  const [transactionsState, setTransactions] = useState<Transaction[]>(transactions);
-  const [alertsState, setAlerts] = useState<Alert[]>(alerts);
-  const [statsState, setDashboardStats] = useState<DashboardStats>(dashboardStats);
+  const [medsState, setMedications] = useState<Medication[]>(mockMedications);
+  const [suppliersState, setSuppliers] = useState<Supplier[]>(mockSuppliers);
+  const [transactionsState, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const [alertsState, setAlerts] = useState<Alert[]>(mockAlerts);
+  const [statsState, setDashboardStats] = useState<DashboardStats>(mockDashboardStats);
 
   // Stock threshold for low stock alerts
   const LOW_STOCK_THRESHOLD = 10;
@@ -140,7 +140,7 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
   const handleStockUpdate = (medication: Medication) => {
     // Check if this medication already has a low stock alert
     const existingAlertIndex = alertsState.findIndex(
-      alert => alert.type === "lowStock" && alert.relatedId === medication.id
+      alert => alert.type === "low-stock" && alert.medicationId === medication.id
     );
     
     // If stock is low and there's no alert, create one
@@ -159,10 +159,11 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
   const createLowStockAlert = (medication: Medication) => {
     const newAlert: Alert = {
       id: generateId("a"),
-      type: "lowStock",
-      title: "Low Stock Alert",
-      relatedId: medication.id,
+      type: "low-stock",
+      medicationId: medication.id,
+      medicationName: medication.name,
       message: `${medication.name} is running low on stock (${medication.stock} units remaining).`,
+      severity: medication.stock <= 5 ? "high" : "medium",
       isRead: false,
       createdAt: new Date().toISOString()
     };
@@ -177,7 +178,7 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
     setMedications(prev => prev.filter(med => med.id !== id));
     
     // Remove any alerts associated with this medication
-    setAlerts(prev => prev.filter(alert => alert.relatedId !== id));
+    setAlerts(prev => prev.filter(alert => alert.medicationId !== id));
     
     setDashboardStats(prev => ({
       ...prev,
@@ -311,17 +312,17 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
   };
 
   const checkLowStockItems = () => {
-    const lowStockMeds = medications.filter(med => med.stock <= 10);
+    const lowStockMeds = mockMedications.filter(med => med.stock <= 10);
     
     lowStockMeds.forEach(med => {
       // Check if there's already a low-stock alert for this medication
-      const existingAlert = alerts.find(
+      const existingAlert = alertsState.find(
         alert => alert.type === "low-stock" && alert.medicationId === med.id
       );
       
       if (!existingAlert) {
         const newAlert: Alert = {
-          id: uuidv4(),
+          id: generateId("a"),
           type: "low-stock",
           medicationId: med.id,
           medicationName: med.name,
@@ -341,14 +342,14 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
     const thirtyDaysFromNow = new Date(today);
     thirtyDaysFromNow.setDate(today.getDate() + 30);
     
-    const expiringMeds = medications.filter(med => {
+    const expiringMeds = mockMedications.filter(med => {
       const expiryDate = new Date(med.expiryDate);
       return expiryDate <= thirtyDaysFromNow && expiryDate >= today;
     });
     
     expiringMeds.forEach(med => {
       // Check if there's already an expiry alert for this medication
-      const existingAlert = alerts.find(
+      const existingAlert = alertsState.find(
         alert => alert.type === "expiry" && alert.medicationId === med.id
       );
       
@@ -358,7 +359,7 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
         const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
         
         const newAlert: Alert = {
-          id: uuidv4(),
+          id: generateId("a"),
           type: "expiry",
           medicationId: med.id,
           medicationName: med.name,

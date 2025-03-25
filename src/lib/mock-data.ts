@@ -1,241 +1,314 @@
-import { Alert, Medication, Supplier, Transaction, User, StockChangeRecord } from "@/types";
-import { v4 as uuidv4 } from "uuid";
 
-// Demo users
+import { v4 as uuidv4 } from 'uuid';
+import { 
+  User, 
+  Medication, 
+  Supplier, 
+  Transaction, 
+  Alert, 
+  DashboardStats 
+} from '@/types';
+
+// Mock Users
 export const mockUsers: User[] = [
   {
-    id: "u1",
-    name: "Admin User",
-    email: "admin@pharmacy.com",
-    role: "admin",
-    createdAt: "2023-01-15T09:00:00Z",
+    id: 'user-1',
+    name: 'Admin User',
+    email: 'admin@pharmsentinel.com',
+    role: 'admin',
+    createdAt: new Date(2023, 0, 15).toISOString()
   },
   {
-    id: "u2",
-    name: "Pharmacist User",
-    email: "pharmacist@pharmacy.com",
-    role: "pharmacist",
-    createdAt: "2023-02-10T11:30:00Z",
+    id: 'user-2',
+    name: 'Pharmacist User',
+    email: 'pharmacist@pharmsentinel.com',
+    role: 'pharmacist',
+    createdAt: new Date(2023, 2, 10).toISOString()
   },
   {
-    id: "u3",
-    name: "Staff User",
-    email: "staff@pharmacy.com",
-    role: "staff",
-    createdAt: "2023-03-05T14:15:00Z",
-  },
+    id: 'user-3',
+    name: 'Staff User',
+    email: 'staff@pharmsentinel.com',
+    role: 'staff',
+    createdAt: new Date(2023, 4, 5).toISOString()
+  }
 ];
 
-// Demo suppliers
-export const mockSuppliers: Supplier[] = [
-  {
-    id: "s1",
-    name: "PharmaTech Solutions",
-    email: "contact@pharmatech.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Medical Blvd, San Francisco, CA 94110",
-    contactName: "John Smith",
-    status: "active",
-    createdAt: "2023-01-10T08:00:00Z",
-    updatedAt: "2023-06-15T11:20:00Z",
-  },
-  {
-    id: "s2",
-    name: "MediSource Inc.",
-    email: "info@medisource.com",
-    phone: "+1 (555) 987-6543",
-    address: "456 Health Ave, Chicago, IL 60607",
-    contactName: "Sarah Jones",
-    status: "active",
-    createdAt: "2023-02-05T09:15:00Z",
-    updatedAt: "2023-05-20T14:30:00Z",
-  },
-  {
-    id: "s3",
-    name: "Global Pharma Distributors",
-    email: "sales@globalpharma.com",
-    phone: "+1 (555) 789-0123",
-    address: "789 Wellness Pkwy, Boston, MA 02210",
-    contactName: "Michael Chen",
-    status: "inactive",
-    createdAt: "2023-03-15T10:45:00Z",
-    updatedAt: "2023-04-10T16:00:00Z",
-  },
-];
-
-// Demo medications
+// Mock Medications
 export const mockMedications: Medication[] = [
   {
-    id: "m1",
-    name: "Amoxicillin",
-    description: "Broad-spectrum antibiotic",
-    sku: "AMX-250",
-    category: "Antibiotics",
-    price: 7.50,
-    costPrice: 3.20,
+    id: 'med-1',
+    name: 'Paracetamol',
+    description: 'Pain reliever and fever reducer',
+    sku: 'PARA-500',
+    category: 'Pain Relief',
+    price: 9.99,
+    costPrice: 5.50,
     stock: 150,
-    expiryDate: "2024-12-31",
-    manufacturer: "PharmaCorp",
-    supplierId: "s1",
-    createdAt: "2023-01-20T14:00:00Z",
-    updatedAt: "2023-07-01T10:10:00Z",
+    expiryDate: new Date(2024, 11, 31).toISOString(),
+    manufacturer: 'PharmaCorp',
+    supplierId: 'sup-1',
+    createdAt: new Date(2023, 0, 10).toISOString(),
+    updatedAt: new Date(2023, 0, 10).toISOString()
   },
   {
-    id: "m2",
-    name: "Lisinopril",
-    description: "ACE inhibitor for hypertension",
-    sku: "LSN-10",
-    category: "Cardiovascular",
-    price: 5.00,
-    costPrice: 1.80,
-    stock: 200,
-    expiryDate: "2025-01-15",
-    manufacturer: "MediGenix",
-    supplierId: "s2",
-    createdAt: "2023-02-15T16:30:00Z",
-    updatedAt: "2023-06-25T12:45:00Z",
+    id: 'med-2',
+    name: 'Amoxicillin',
+    description: 'Antibiotic used to treat bacterial infections',
+    sku: 'AMOX-250',
+    category: 'Antibiotics',
+    price: 14.99,
+    costPrice: 7.25,
+    stock: 75,
+    expiryDate: new Date(2024, 9, 15).toISOString(),
+    manufacturer: 'MediPharm',
+    supplierId: 'sup-2',
+    createdAt: new Date(2023, 1, 5).toISOString(),
+    updatedAt: new Date(2023, 1, 5).toISOString()
   },
   {
-    id: "m3",
-    name: "Paracetamol",
-    description: "Analgesic and antipyretic",
-    sku: "PCM-500",
-    category: "Analgesics",
-    price: 3.00,
-    costPrice: 1.00,
-    stock: 300,
-    expiryDate: "2024-11-30",
-    manufacturer: "GlobalCare",
-    supplierId: "s3",
-    createdAt: "2023-03-10T11:00:00Z",
-    updatedAt: "2023-05-10T15:20:00Z",
+    id: 'med-3',
+    name: 'Loratadine',
+    description: 'Antihistamine for allergy relief',
+    sku: 'LORA-10',
+    category: 'Allergy',
+    price: 11.99,
+    costPrice: 6.00,
+    stock: 8,
+    expiryDate: new Date(2024, 8, 30).toISOString(),
+    manufacturer: 'AllerCare',
+    supplierId: 'sup-1',
+    createdAt: new Date(2023, 2, 15).toISOString(),
+    updatedAt: new Date(2023, 2, 15).toISOString()
   },
   {
-    id: "m4",
-    name: "Atorvastatin",
-    description: "Statin for lowering cholesterol",
-    sku: "ATR-20",
-    category: "Cardiovascular",
-    price: 8.20,
+    id: 'med-4',
+    name: 'Ibuprofen',
+    description: 'Nonsteroidal anti-inflammatory drug',
+    sku: 'IBUP-400',
+    category: 'Pain Relief',
+    price: 8.99,
     costPrice: 4.50,
     stock: 120,
-    expiryDate: "2024-10-01",
-    manufacturer: "PharmaCorp",
-    supplierId: "s1",
-    createdAt: "2023-04-05T09:30:00Z",
-    updatedAt: "2023-07-15T13:00:00Z",
+    expiryDate: new Date(2025, 1, 28).toISOString(),
+    manufacturer: 'PharmaCorp',
+    supplierId: 'sup-3',
+    createdAt: new Date(2023, 3, 10).toISOString(),
+    updatedAt: new Date(2023, 3, 10).toISOString()
   },
   {
-    id: "m5",
-    name: "Metformin",
-    description: "Biguanide for type 2 diabetes",
-    sku: "MET-500",
-    category: "Endocrine",
-    price: 6.80,
-    costPrice: 2.90,
-    stock: 180,
-    expiryDate: "2025-02-28",
-    manufacturer: "MediGenix",
-    supplierId: "s2",
-    createdAt: "2023-05-01T13:45:00Z",
-    updatedAt: "2023-06-01T16:40:00Z",
-  },
+    id: 'med-5',
+    name: 'Salbutamol',
+    description: 'Bronchodilator for asthma',
+    sku: 'SALB-100',
+    category: 'Respiratory',
+    price: 19.99,
+    costPrice: 10.75,
+    stock: 5,
+    expiryDate: new Date(2024, 6, 15).toISOString(),
+    manufacturer: 'RespiCare',
+    supplierId: 'sup-2',
+    createdAt: new Date(2023, 4, 20).toISOString(),
+    updatedAt: new Date(2023, 4, 20).toISOString()
+  }
 ];
 
-// Demo transactions
+// Mock Suppliers
+export const mockSuppliers: Supplier[] = [
+  {
+    id: 'sup-1',
+    name: 'PharmaCorp Supplies',
+    email: 'contact@pharmacorp.com',
+    phone: '+1-555-123-4567',
+    address: '123 Supplier St, Pharma City, PC 12345',
+    contactName: 'John Smith',
+    status: 'active',
+    createdAt: new Date(2022, 11, 10).toISOString(),
+    updatedAt: new Date(2023, 1, 15).toISOString()
+  },
+  {
+    id: 'sup-2',
+    name: 'MediPharm Distributors',
+    email: 'sales@medipharm.com',
+    phone: '+1-555-987-6543',
+    address: '456 Distribution Ave, Med Town, MT 67890',
+    contactName: 'Sarah Johnson',
+    status: 'active',
+    createdAt: new Date(2023, 0, 5).toISOString(),
+    updatedAt: new Date(2023, 0, 5).toISOString()
+  },
+  {
+    id: 'sup-3',
+    name: 'Global Health Solutions',
+    email: 'info@globalhealthsolutions.com',
+    phone: '+1-555-789-0123',
+    address: '789 Global Blvd, Health City, HC 54321',
+    contactName: 'Michael Brown',
+    status: 'inactive',
+    createdAt: new Date(2022, 9, 20).toISOString(),
+    updatedAt: new Date(2023, 2, 10).toISOString()
+  }
+];
+
+// Mock Transactions
 export const mockTransactions: Transaction[] = [
   {
-    id: "t1",
-    type: "sale",
+    id: 'trans-1',
+    type: 'sale',
     items: [
-      { medicationId: "m1", medicationName: "Amoxicillin", quantity: 2, unitPrice: 7.50, subtotal: 15.00 },
-      { medicationId: "m3", medicationName: "Paracetamol", quantity: 5, unitPrice: 3.00, subtotal: 15.00 },
+      {
+        medicationId: 'med-1',
+        medicationName: 'Paracetamol',
+        quantity: 3,
+        unitPrice: 9.99,
+        subtotal: 29.97
+      }
     ],
-    total: 30.00,
-    customerName: "Alice Johnson",
-    paymentMethod: "cash",
-    status: "completed",
-    notes: "Customer requested generic version",
-    createdAt: "2023-07-20T10:00:00Z",
+    total: 29.97,
+    customerId: 'cust-1',
+    customerName: 'Jane Doe',
+    paymentMethod: 'cash',
+    status: 'completed',
+    notes: 'Regular customer',
+    createdAt: new Date(2023, 5, 12, 10, 30).toISOString()
   },
   {
-    id: "t2",
-    type: "sale",
+    id: 'trans-2',
+    type: 'purchase',
     items: [
-      { medicationId: "m2", medicationName: "Lisinopril", quantity: 1, unitPrice: 5.00, subtotal: 5.00 },
+      {
+        medicationId: 'med-2',
+        medicationName: 'Amoxicillin',
+        quantity: 50,
+        unitPrice: 7.25,
+        subtotal: 362.50
+      },
+      {
+        medicationId: 'med-3',
+        medicationName: 'Loratadine',
+        quantity: 30,
+        unitPrice: 6.00,
+        subtotal: 180.00
+      }
     ],
-    total: 5.00,
-    customerName: "Bob Williams",
-    paymentMethod: "card",
-    status: "completed",
-    notes: "Refill for chronic condition",
-    createdAt: "2023-07-20T11:15:00Z",
+    total: 542.50,
+    paymentMethod: 'card',
+    status: 'completed',
+    notes: 'Stock replenishment',
+    createdAt: new Date(2023, 5, 10, 14, 45).toISOString()
   },
   {
-    id: "t3",
-    type: "purchase",
+    id: 'trans-3',
+    type: 'sale',
     items: [
-      { medicationId: "m4", medicationName: "Atorvastatin", quantity: 50, unitPrice: 4.50, subtotal: 225.00 },
-      { medicationId: "m5", medicationName: "Metformin", quantity: 30, unitPrice: 2.90, subtotal: 87.00 },
+      {
+        medicationId: 'med-4',
+        medicationName: 'Ibuprofen',
+        quantity: 2,
+        unitPrice: 8.99,
+        subtotal: 17.98
+      },
+      {
+        medicationId: 'med-5',
+        medicationName: 'Salbutamol',
+        quantity: 1,
+        unitPrice: 19.99,
+        subtotal: 19.99
+      }
     ],
-    total: 312.00,
-    paymentMethod: "cash",
-    status: "completed",
-    notes: "Bulk order from PharmaCorp",
-    createdAt: "2023-07-21T09:45:00Z",
+    total: 37.97,
+    customerId: 'cust-2',
+    customerName: 'Robert Johnson',
+    paymentMethod: 'insurance',
+    status: 'completed',
+    notes: '',
+    createdAt: new Date(2023, 5, 11, 16, 20).toISOString()
   },
+  {
+    id: 'trans-4',
+    type: 'sale',
+    items: [
+      {
+        medicationId: 'med-1',
+        medicationName: 'Paracetamol',
+        quantity: 1,
+        unitPrice: 9.99,
+        subtotal: 9.99
+      }
+    ],
+    total: 9.99,
+    customerId: 'cust-3',
+    customerName: 'Alice Smith',
+    paymentMethod: 'cash',
+    status: 'completed',
+    notes: 'First-time customer',
+    createdAt: new Date(2023, 5, 12, 9, 15).toISOString()
+  }
 ];
 
-// Demo alerts
+// Mock Alerts
 export const mockAlerts: Alert[] = [
   {
-    id: "a1",
-    type: "low-stock",
-    medicationId: "m4",
-    medicationName: "Atorvastatin",
-    message: "Low stock: Atorvastatin is running low.",
-    severity: "medium",
+    id: 'alert-1',
+    type: 'low-stock',
+    medicationId: 'med-3',
+    medicationName: 'Loratadine',
+    message: 'Low stock alert: Loratadine has only 8 units left.',
+    severity: 'medium',
     isRead: false,
-    createdAt: "2023-07-19T15:30:00Z",
+    createdAt: new Date(2023, 5, 11, 8, 30).toISOString()
   },
   {
-    id: "a2",
-    type: "expiry",
-    medicationId: "m1",
-    medicationName: "Amoxicillin",
-    message: "Expiry: Amoxicillin is expiring soon.",
-    severity: "high",
+    id: 'alert-2',
+    type: 'low-stock',
+    medicationId: 'med-5',
+    medicationName: 'Salbutamol',
+    message: 'Low stock alert: Salbutamol has only 5 units left.',
+    severity: 'high',
     isRead: false,
-    createdAt: "2023-07-20T08:00:00Z",
+    createdAt: new Date(2023, 5, 12, 10, 0).toISOString()
   },
+  {
+    id: 'alert-3',
+    type: 'expiry',
+    medicationId: 'med-5',
+    medicationName: 'Salbutamol',
+    message: 'Expiration alert: Salbutamol will expire in 25 days.',
+    severity: 'medium',
+    isRead: true,
+    createdAt: new Date(2023, 5, 10, 9, 45).toISOString()
+  },
+  {
+    id: 'alert-4',
+    type: 'system',
+    message: 'System maintenance scheduled for tonight at 2 AM.',
+    severity: 'low',
+    isRead: false,
+    createdAt: new Date(2023, 5, 12, 11, 15).toISOString()
+  }
 ];
 
-// Demo stock change records
-export const mockStockChangeRecords: StockChangeRecord[] = [
-  {
-    id: uuidv4(),
-    medicationId: "m1",
-    medicationName: "Amoxicillin",
-    previousStock: 100,
-    newStock: 150,
-    changeAmount: 50,
-    changeType: "increase",
-    reason: "Received new shipment",
-    userId: "u2",
-    userName: "Pharmacist User",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: uuidv4(),
-    medicationId: "m2",
-    medicationName: "Lisinopril",
-    previousStock: 250,
-    newStock: 200,
-    changeAmount: 50,
-    changeType: "decrease",
-    reason: "Dispensed to patients",
-    userId: "u3",
-    userName: "Staff User",
-    timestamp: new Date().toISOString(),
-  },
-];
+// Mock Dashboard Stats
+export const mockDashboardStats: DashboardStats = {
+  totalMedications: 5,
+  lowStockCount: 2,
+  expiringCount: 1,
+  totalSalesToday: 39.96,
+  recentTransactions: [
+    mockTransactions[0],
+    mockTransactions[2],
+    mockTransactions[3]
+  ],
+  topSelling: [
+    { name: 'Paracetamol', count: 120 },
+    { name: 'Ibuprofen', count: 95 },
+    { name: 'Amoxicillin', count: 80 },
+    { name: 'Loratadine', count: 65 },
+    { name: 'Salbutamol', count: 40 }
+  ]
+};
+
+// Helper to generate a unique ID
+export const generateId = (prefix: string) => {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
+};
