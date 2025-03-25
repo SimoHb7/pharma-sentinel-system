@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { medications, suppliers, transactions, alerts, dashboardStats } from "@/lib/mock-data";
 import { 
@@ -9,7 +8,7 @@ import {
   DashboardStats,
   TransactionItem
 } from "@/types";
-import { generateId } from "@/lib/utils";
+import { generateId, uuidv4 } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
 interface PharmacyContextType {
@@ -309,6 +308,69 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
 
   const clearAlert = (id: string) => {
     setAlerts(prev => prev.filter(alert => alert.id !== id));
+  };
+
+  const checkLowStockItems = () => {
+    const lowStockMeds = medications.filter(med => med.stock <= 10);
+    
+    lowStockMeds.forEach(med => {
+      // Check if there's already a low-stock alert for this medication
+      const existingAlert = alerts.find(
+        alert => alert.type === "low-stock" && alert.medicationId === med.id
+      );
+      
+      if (!existingAlert) {
+        const newAlert: Alert = {
+          id: uuidv4(),
+          type: "low-stock",
+          medicationId: med.id,
+          medicationName: med.name,
+          message: `Low stock alert: ${med.name} has only ${med.stock} units left.`,
+          severity: med.stock <= 5 ? "high" : "medium",
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        };
+        
+        setAlerts(prev => [newAlert, ...prev]);
+      }
+    });
+  };
+
+  const checkExpiringMedications = () => {
+    const today = new Date();
+    const thirtyDaysFromNow = new Date(today);
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+    
+    const expiringMeds = medications.filter(med => {
+      const expiryDate = new Date(med.expiryDate);
+      return expiryDate <= thirtyDaysFromNow && expiryDate >= today;
+    });
+    
+    expiringMeds.forEach(med => {
+      // Check if there's already an expiry alert for this medication
+      const existingAlert = alerts.find(
+        alert => alert.type === "expiry" && alert.medicationId === med.id
+      );
+      
+      if (!existingAlert) {
+        const expiryDate = new Date(med.expiryDate);
+        const differenceInTime = expiryDate.getTime() - today.getTime();
+        const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+        
+        const newAlert: Alert = {
+          id: uuidv4(),
+          type: "expiry",
+          medicationId: med.id,
+          medicationName: med.name,
+          message: `Expiration alert: ${med.name} will expire in ${differenceInDays} days.`,
+          severity: differenceInDays <= 7 ? "high" : "medium",
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        };
+        
+        setAlerts(prev => [newAlert, ...prev]);
+      }
+    });
   };
 
   return (

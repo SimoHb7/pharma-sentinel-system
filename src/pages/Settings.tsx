@@ -133,24 +133,31 @@ export default function Settings() {
   };
   
   const handleAddUser = () => {
-    if (!newUser.name || !newUser.email) {
+    if (!newUser.name || !newUser.email || !newUser.role) {
       toast({
-        title: "Error",
-        description: "Name and email are required.",
-        variant: "destructive"
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
       });
       return;
     }
     
-    addUser(newUser);
+    addUser({
+      ...newUser,
+      role: newUser.role as 'admin' | 'pharmacist' | 'staff',
+    });
     
+    setIsAddUserDialogOpen(false);
     setNewUser({
       name: "",
       email: "",
       role: "staff",
-      password: "password123"
     });
-    setIsAddUserDialogOpen(false);
+    
+    toast({
+      title: "User Added",
+      description: `${newUser.name} has been added as a ${newUser.role}.`,
+    });
   };
   
   const handleEditUser = () => {
